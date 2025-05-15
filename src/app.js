@@ -38,7 +38,7 @@ const formSubmitApi = async (req, res) => {
     message: reqData.message,
     name: reqData.name,
   }
-  logger.info(JSON.stringify(data));
+  logger.info(data);
   emailService.pcwtEmail(data)
     .then((res) => logger.data("Email Response..", res.response))
     .catch((err) => logger.error("sendEmailToUser", err));
@@ -46,6 +46,21 @@ const formSubmitApi = async (req, res) => {
 }
 
 app.post("/api/v1/formSubmit", catchAsync(formSubmitApi))
+
+const api = async (req, res) => {
+  const data = {
+    name: 'Usman Pasha.A',
+    email: 'siraj.backend.dev@gmail.com',
+    dept: 'Backend Developer',
+  }
+  logger.info(data);
+  return responser.send(200, "Successfully Health CheckUp Fetched ", req, res, data);
+}
+
+app.post("/api/v1/formSubmit", catchAsync(formSubmitApi))
+app.get("/api/v1/check", catchAsync(api))
+
+
 
 app.use(globalErrorHandler);
 

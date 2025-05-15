@@ -8,7 +8,8 @@ import app from "./app.js";
 // Custom Imports
 import config from "./config/index.js";
 import logger from "./utils/logger.js";
-import db from "./core/db.js"
+import db from "./core/db.js";
+import "./jobs/index.js";
 
 // Workaround for __dirname in ES Modules
 const __filename = fileURLToPath(import.meta.url);
@@ -18,7 +19,7 @@ const __dirname = path.dirname(__filename);
 const server = http.createServer(app);
 
 // Start server
-server.listen(config.PORT,async() => {
+server.listen(config.PORT, async () => {
   logger.info(`🚀 App is running at http://localhost:${config.PORT}`);
   logger.info(`🌍 Environment: ${app.get("env")}`);
   await db(config.DB_URI)
