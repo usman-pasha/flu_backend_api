@@ -10,6 +10,7 @@ import * as logger from "../utils/log.js";
 import { v4 as uuidv4 } from 'uuid';
 import * as tokenService from "./token.service.js";
 import * as emailService from "../utils/nodemailer.js"
+import * as accountService from "./account.service.js"
 
 // 1.Register User
 export const registerUser = async (body) => {
@@ -31,9 +32,10 @@ export const registerUser = async (body) => {
         username: uniqueUserName,
         emailOTP: generateOTP(),
         emailOtpExpiry: Date.now() + 5 * 60 * 1000,
+        phoneOTP: generateOTP(),
+        phoneOtpExpiry: Date.now() + 5 * 60 * 1000,
         accountType: "user"
     };
-    if (body.username) payload.username = body.username;
     if (body.email) payload.email = body.email;
     if (body.phoneNumber) payload.phoneNumber = Number(body.phoneNumber);
     if (body.password) {
@@ -42,14 +44,16 @@ export const registerUser = async (body) => {
     }
     const createUser = await userService.createrecord(payload);
     // TODO Email OTP 
-    const emailPayload = {
-        username: createUser.username,
-        email: createUser.email,
-        emailOTP: createUser.emailOTP
-    }
-    emailService.sendVerificationEmail(emailPayload)
-        .then((res) => logger.data("Email Response..", res.response))
-        .catch((err) => logger.error("sendEmailToUser", err));
+    // const emailPayload = {
+    //     username: createUser.username,
+    //     email: createUser.email,
+    //     emailOTP: createUser.emailOTP
+    // }
+    // emailService.sendVerificationEmail(emailPayload)
+    //     .then((res) => logger.data("Email Response..", res.response))
+    //     .catch((err) => logger.error("sendEmailToUser", err));
+    const _userId = createUser?._id
+    await accountService.accountCreate(_userId);
     const record = await userService.findOneRecord(
         { _id: createUser?._id },
         "-password -__v -createdAt -updatedAt -phoneOtpExpiry -emailOtpExpiry -emailOTP"
@@ -57,35 +61,62 @@ export const registerUser = async (body) => {
     return record;
 };
 
-// 2.verify Email OTP 
-export const validateEmailOTP = async (body) => {
-    logger.info("Validate Email OTP");
-    const filter = { email: body.email };
+export const validateOTP = async (body) => {
+    logger.info("Validate OTP");
+
+    const { type, phoneNumber, email, phoneOTP, emailOTP } = body;
+
+    if (!type || !["phone", "email"].includes(type)) {
+        throw new AppError(400, "Invalid type. Must be 'phone' or 'email'.");
+    }
+
+    // Determine filter and fields based on type
+    const isPhone = type === "phone";
+    const filter = isPhone ? { phoneNumber } : { email };
+    const otpField = isPhone ? "phoneOTP" : "emailOTP";
+    const otpExpiryField = isPhone ? "phoneOtpExpiry" : "emailOtpExpiry";
+    const isVerifiedField = isPhone ? "phoneIsVerified" : "emailIsVerified";
+    const providedOtp = isPhone ? phoneOTP : emailOTP;
+
+    // Validate inputs
+    if (!filter[Object.keys(filter)[0]] || !providedOtp) {
+        throw new AppError(400, `Please provide ${isPhone ? "phoneNumber and phoneOTP" : "email and emailOTP"}!`);
+    }
+
+    // Fetch user
     const user = await userService.findOneRecord(filter);
     if (!user) {
-        throw new AppError(404, "Your not a existing user.Register first!");
+        throw new AppError(404, "You're not an existing user. Register first!");
     }
-    if (!body.emailOTP || !body.email) {
-        throw new AppError(404, "Please provide email and emailOTP!");
-    }
-    // Check if OTP is expired
-    const otpField = "emailOTP"
-    if (Date.now() > user.emailOtpExpiry) {
+
+    // Check OTP expiry
+    if (Date.now() > new Date(user[otpExpiryField])) {
         await userService.updateRecord({ _id: user._id }, {
-            $unset: { [otpField]: "" },
+            $unset: { [otpField]: "" }
         });
-        throw new AppError(404, "OTP has expired.Try To Resend OTP!");
+        throw new AppError(400, "OTP has expired. Try resending it!");
     }
-    // Check if entered OTP matches the stored OTP
-    if (body.emailOTP !== String(user.emailOTP))
-        throw new AppError(404, "Invalid OTP.Try It Again!");
-    // Clear OTP and expiry after successful validation
+
+    // Match OTP
+    if (String(providedOtp) !== String(user[otpField])) {
+        throw new AppError(400, "Invalid OTP. Try again!");
+    }
+
+    // Success: update verification status
     await userService.updateRecord({ _id: user._id }, {
-        $set: { emailIsVerified: true, status: "active" },
-        $unset: { [otpField]: "", emailOtpExpiry: "" },
+        $set: {
+            [isVerifiedField]: true,
+            status: "active"
+        },
+        $unset: {
+            [otpField]: "",
+            [otpExpiryField]: ""
+        }
     });
-    return `OTP Validation Successful Done ${user.email} !`;
+
+    return `OTP validation successful for ${isPhone ? user.phoneNumber : user.email}!`;
 };
+
 
 // 3.Function to resend OTP
 export const resendOTP = async (body) => {
@@ -119,20 +150,71 @@ export const resendOTP = async (body) => {
     }
 
     // Update the OTP and expiry in the database
-    await userService.updateRecord({ _id: user._id }, updateFields);
+    const _r = await userService.updateRecord({ _id: user._id }, updateFields);
     // TODO New Email OTP
-    const emailPayload = {
-        username: user.username,
-        email: user.email,
-        emailOTP: newOtp
-    }
-    emailService.resendEmailOTP(emailPayload)
-        .then((res) => logger.data("Email Response..", res.response))
-        .catch((err) => logger.error("sendEmailToUser", err));
-    return `Successfully sent new OTP to ${body.type === 'phone' ? user.phoneNumber : user.email}!`;
+    return `Successfully sent new OTP to ${body.type === 'phone' ? user.phoneNumber : user.email} | OTP is ${_r.phoneOTP}!`;
 };
 
-// 4.login
+// 4 refreshLoginPhoneOtp
+export const refreshLoginOtp = async (body) => {
+    logger.info("Refresh service Starting");
+    const filter = { phoneNumber: body.phoneNumber };
+    const user = await userService.findOneRecord(filter);
+    if (!user) {
+        throw new AppError(400, "User not found with the provided Phone Number.");
+    }
+    const newOtp = generateOTP();
+    const newExpiry = Date.now() + 5 * 60 * 1000; // OTP expires in 5 minutes
+    const updateFields = {
+        $set: { loginWithOtp: newOtp, loginWithOtpExpiry: newExpiry }
+    };
+    const record = await userService.updateRecord(
+        { _id: user._id }, updateFields
+    );
+    // await sms.smsOTPV2(record);
+    logger.info(record);
+    return `Successfully sent new Login OTP to ${user.phoneNumber} | OTP is ${record.loginWithOtp}!`;
+};
+
+export const loginWithPhoneOtp = async (body) => {
+    if (!body.phoneNumber || !body.loginWithOtp) {
+        throw new AppError(400, "Phone Number and OTP are required.");
+    }
+
+    const user = await userService.findOneRecord({ phoneNumber: body.phoneNumber });
+    if (!user) throw new AppError(400, "User not found with the provided Phone Number.");
+
+    // Check if the phone number is verified
+    if (user.phoneIsVerified !== true) {
+        throw new AppError(400, "Phone Number is not verified. Please verify your Number first.");
+    }
+    if (user.status === "deleted") {
+        throw new AppError(400, "User Account is deleted. Contact Admin.");
+    }
+
+    if (Date.now() > new Date(user.loginWithOtpExpiry)) {
+        await userService.updateRecord({ _id: user._id }, { $unset: { loginWithOtp: "", loginWithOtpExpiry: "" } });
+        throw new AppError(400, "Login OTP has expired. Try resending it.");
+    }
+
+    if (String(body.loginWithOtp) !== String(user.loginWithOtp)) {
+        throw new AppError(400, "Invalid OTP. Try again.");
+    }
+
+    await userService.updateRecord({ _id: user._id }, {
+        $unset: { loginWithOtp: "", loginWithOtpExpiry: "" }
+    });
+    // await userService.updateRecord({ _id: user._id }, {
+    //     $set: { phoneIsVerified: true, status: "active" },
+    //     $unset: { phoneOTP: "", phoneOtpExpiry: "" }
+    // });
+
+    const loginToken = await createLogin(user);
+    logger.info(`User ${user.phoneNumber} logged in successfully via phone OTP.`);
+    return loginToken;
+}
+
+// 5.login with email and password 
 export const login = async (body) => {
     logger.info("Login Service Started");
 

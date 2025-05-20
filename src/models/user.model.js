@@ -3,18 +3,18 @@ const schema = mongoose.Schema;
 
 const userSchema = new schema(
     {
-        firstName: { type: String },
-        lastName: { type: String },
         username: { type: String, required: true, unique: true },
         email: { type: String, required: true, unique: true },
         emailOTP: { type: Number },
         emailIsVerified: { type: Boolean, default: false },
         emailOtpExpiry: { type: Date },
         phoneNumber: { type: Number, required: true, unique: true },
-        // phoneOTP: { type: Number },
-        // phoneIsVerified: { type: Boolean, default: false },
-        // phoneOtpExpiry: { type: Date },
+        phoneOTP: { type: Number },
+        phoneIsVerified: { type: Boolean, default: false },
+        phoneOtpExpiry: { type: Date },
         password: { type: String, required: true },
+        loginWithOtp: { type: Number },
+        loginWithOtpExpiry: { type: Date },
         accountType: { type: String, required: true, enum: ['user', 'admin'] },
         profilePicture: { type: String },
         resetPasswordPhoneOtp: { type: Number },

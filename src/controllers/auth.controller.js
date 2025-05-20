@@ -11,11 +11,11 @@ class authController {
     };
 
     // validateEmailOTP
-    validateEmailOTP = async (req, res) => {
+    validateOTP = async (req, res) => {
         const reqData = req.body;
-        const data = await authService.validateEmailOTP(reqData);
+        const data = await authService.validateOTP(reqData);
         console.log(data);
-        return responser.send(200, "Successfully Validate Email OTP", req, res, data);
+        return responser.send(200, "Successfully Validate OTP", req, res, data);
     }
 
     // resend
@@ -32,6 +32,20 @@ class authController {
         const data = await authService.login(reqData);
         console.log(data);
         return responser.send(200, `Successfully ${data.accountType} Login`, req, res, data);
+    };
+
+    refreshLoginOtp = async (req, res) => {
+        const reqData = req.body;
+        const data = await authService.refreshLoginOtp(reqData);
+        console.log(data);
+        return responser.send(200, `Successfully ${reqData.phoneNumber} Login OTP Sent`, req, res, data);
+    };
+
+    loginWithPhoneOtp = async (req, res) => {
+        const reqData = req.body;
+        const data = await authService.loginWithPhoneOtp(reqData);
+        console.log(data);
+        return responser.send(200, `Successfully ${data.accountType} Logged In Via Phone OTP`, req, res, data);
     };
 
     // updatePassword 
