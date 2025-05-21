@@ -6,19 +6,31 @@ export const verifyAuth = async (req, res, next) => {
     try {
         const token = req.header("Authorization")?.replace("Bearer ", "");
         if (!token)
-            return res.status(401).send({ message: "Authorization Token Required" });
+            if (!token) {
+                return res.status(401).json({
+                    status: false,
+                    message: "Authorization token is required"
+                });
+            }
         const decodedToken = jwt.verify(token, config.ACCESS_SECRET);
         const user = await userModel.findOne(
             { _id: decodedToken?.id },
             { username: 1, _id: 1, accountType: 1 }
         );
-        if (!user)
-            return res.status(401).send({ message: "User Not Found Invalid user" });
+        if (!user) {
+            return res.status(401).json({
+                status: false,
+                message: "Invalid token. User not found"
+            });
+        }
         req.user = user;
         req.userId = decodedToken?.id;
         next();
     } catch (error) {
-        return res.status(401).send({ message: error.message });
+        return res.status(401).json({
+            status: false,
+            message: "Unauthorized: " + error.message
+        });
     }
 };
 

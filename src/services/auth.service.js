@@ -9,8 +9,8 @@ import { generateOTP } from "../utils/utils.js";
 import * as logger from "../utils/log.js";
 import { v4 as uuidv4 } from 'uuid';
 import * as tokenService from "./token.service.js";
-import * as emailService from "../utils/nodemailer.js"
-import * as accountService from "./account.service.js"
+import * as emailService from "../utils/nodemailer.js";
+import * as accountService from "./account.service.js";
 
 // 1.Register User
 export const registerUser = async (body) => {
@@ -52,8 +52,6 @@ export const registerUser = async (body) => {
     // emailService.sendVerificationEmail(emailPayload)
     //     .then((res) => logger.data("Email Response..", res.response))
     //     .catch((err) => logger.error("sendEmailToUser", err));
-    const _userId = createUser?._id
-    await accountService.accountCreate(_userId);
     const record = await userService.findOneRecord(
         { _id: createUser?._id },
         "-password -__v -createdAt -updatedAt -phoneOtpExpiry -emailOtpExpiry -emailOTP"
@@ -204,14 +202,19 @@ export const loginWithPhoneOtp = async (body) => {
     await userService.updateRecord({ _id: user._id }, {
         $unset: { loginWithOtp: "", loginWithOtpExpiry: "" }
     });
-    // await userService.updateRecord({ _id: user._id }, {
-    //     $set: { phoneIsVerified: true, status: "active" },
-    //     $unset: { phoneOTP: "", phoneOtpExpiry: "" }
-    // });
 
     const loginToken = await createLogin(user);
+    // here i want accountCompleted are not i want here 
+    // ✅ Get account and check if profile is completed
+    const account = await accountService.findOneRecord({ userId: user._id });
+    const accountCompleted = account?.profileCompleted === true;
+
     logger.info(`User ${user.phoneNumber} logged in successfully via phone OTP.`);
-    return loginToken;
+
+    return {
+        ...loginToken,
+        accountCompleted
+    };
 }
 
 // 5.login with email and password 
