@@ -2,6 +2,7 @@ import { promotionModel } from "../models/promotion.model.js";
 import * as logger from "../utils/log.js";
 import AppError from "../core/appError.js";
 import * as userService from "./user.service.js";
+import APIFeatures from "../core/apiFeature.js";
 
 export const createRecord = async (object) => {
     const record = await promotionModel.create(object);
@@ -85,12 +86,15 @@ export const getAllPromotions = async (query) => {
         { path: "createdBy", select: ["_id", "username", "accountType"] },
         { path: "updatedBy", select: ["_id", "username", "accountType"] }
     ];
-    const condition = {}
-    const promotion = await promotionModel
-        .find(condition)
-        .populate(populateQuery);
-    if (promotion.length <= 0) throw new AppError(404, "Promotion Not Found");
-    return promotion;
+    const record = new APIFeatures(query)
+        .filter()
+        .orRegexMultipleSearch("searchFilter")
+        .sort()
+        .paginate()
+        .populate(populateQuery)
+        .exec(promotionModel);
+    // if (promotion.length <= 0) throw new AppError(404, "Promotion Not Found");
+    return record.data;
 };
 
 export const getOnlyOnePromotion = async (promotionId) => {

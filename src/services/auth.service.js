@@ -28,11 +28,12 @@ export const registerUser = async (body) => {
         .toUpperCase()
         .replace(/-/g, "")
         .substring(0, 9)}`;
+    const generate = generateOTP();
     const payload = {
         username: uniqueUserName,
-        emailOTP: generateOTP(),
+        emailOTP: generate,
         emailOtpExpiry: Date.now() + 5 * 60 * 1000,
-        phoneOTP: generateOTP(),
+        phoneOTP: generate,
         phoneOtpExpiry: Date.now() + 5 * 60 * 1000,
         accountType: "user"
     };

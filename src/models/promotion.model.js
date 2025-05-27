@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 const schema = mongoose.Schema;
+import paginate from "mongoose-paginate-v2";
+import aggregatePaginate from "mongoose-aggregate-paginate-v2";
 
 const promotionSchema = new schema(
     {
@@ -25,5 +27,8 @@ const promotionSchema = new schema(
     },
     { timestamps: true }
 );
+
+promotionSchema.plugin(paginate);
+promotionSchema.plugin(aggregatePaginate);
 
 export const promotionModel = mongoose.model("promotion", promotionSchema);
