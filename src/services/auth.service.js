@@ -150,6 +150,21 @@ export const resendOTP = async (body) => {
     // Update the OTP and expiry in the database
     const _r = await userService.updateRecord({ _id: user._id }, updateFields);
     // TODO New Email OTP
+    // Send OTP via phone or email
+    if (body.type === 'phone') {
+        // TODO: Enable SMS sending when service is ready
+        // await sendSms(user.phoneNumber, `Your verification code is: ${newOtp}`);
+        logger.info(`SMS OTP sent to ${user.phoneNumber}: ${newOtp}`);
+    } else if (body.type === 'email') {
+        const emailPayload = {
+            username: user.username,
+            email: user.email,
+            emailOTP: newOtp
+        };
+        emailService.resendEmailOTP(emailPayload)
+            .then((res) => logger.data("Email Response..", res.response))
+            .catch((err) => logger.error("sendEmailToUser", err));
+    }
     return `Successfully sent new OTP to ${body.type === 'phone' ? user.phoneNumber : user.email} | OTP is ${_r.phoneOTP}!`;
 };
 
