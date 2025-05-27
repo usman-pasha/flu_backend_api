@@ -44,14 +44,14 @@ export const registerUser = async (body) => {
     }
     const createUser = await userService.createrecord(payload);
     // TODO Email OTP 
-    // const emailPayload = {
-    //     username: createUser.username,
-    //     email: createUser.email,
-    //     emailOTP: createUser.emailOTP
-    // }
-    // emailService.sendVerificationEmail(emailPayload)
-    //     .then((res) => logger.data("Email Response..", res.response))
-    //     .catch((err) => logger.error("sendEmailToUser", err));
+    const emailPayload = {
+        username: createUser.username,
+        email: createUser.email,
+        emailOTP: createUser.emailOTP
+    }
+    emailService.sendVerificationEmail(emailPayload)
+        .then((res) => logger.data("Email Response..", res.response))
+        .catch((err) => logger.error("sendEmailToUser", err));
     const record = await userService.findOneRecord(
         { _id: createUser?._id },
         "-password -__v -createdAt -updatedAt -phoneOtpExpiry -emailOtpExpiry -emailOTP"
@@ -204,16 +204,16 @@ export const loginWithPhoneOtp = async (body) => {
     });
 
     const loginToken = await createLogin(user);
-    // here i want accountCompleted are not i want here 
-    // ✅ Get account and check if profile is completed
     const account = await accountService.findOneRecord({ userId: user._id });
     const accountCompleted = account?.profileCompleted === true;
+    const profileCompleted = account?.profileCompleted === true ? "active" : "pending";
 
     logger.info(`User ${user.phoneNumber} logged in successfully via phone OTP.`);
 
     return {
         ...loginToken,
-        accountCompleted
+        accountCompleted,
+        profileCompleted
     };
 }
 
@@ -249,7 +249,17 @@ export const login = async (body) => {
     // Create and return the login token
     const loginToken = await createLogin(user);
     logger.info(`User ${user.email} logged in successfully.`);
-    return loginToken;
+    const account = await accountService.findOneRecord({ userId: user._id });
+    const accountCompleted = account?.profileCompleted === true;
+    const profileCompleted = account?.profileCompleted === true ? "active" : "pending";
+
+    logger.info(`User ${user.phoneNumber} logged in successfully via phone OTP.`);
+
+    return {
+        ...loginToken,
+        accountCompleted,
+        profileCompleted
+    };
 };
 
 // 5.Update Password API
