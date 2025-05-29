@@ -1,0 +1,28 @@
+{
+  "admins": [
+    {
+      "username": "SIRAJ01",
+      "password": "Siraj@1234",
+      "email": "siraj@yahoo.com",
+      "phoneNumber": "9738286574",
+      "emailIsVerified": true,
+      "phoneIsVerified": true,
+      "accountType": "admin",
+      "status": "active",
+      "createdBy": "system",
+      "updatedBy": "system"
+    },
+    {
+      "username": "RIZWAN02",
+      "password": "Rizwan@123",
+      "email": "rizwan@gmail.com",
+      "phoneNumber": "8756789757",
+      "emailIsVerified": true,
+      "phoneIsVerified": true,
+      "accountType": "admin",
+      "status": "active",
+      "createdBy": "system",
+      "updatedBy": "system"
+    }
+  ]
+}

@@ -5,8 +5,11 @@ import aggregatePaginate from "mongoose-aggregate-paginate-v2";
 
 const promotionSchema = new schema(
     {
-        promotion: { type: String, required: true },
+        brandName: { type: String, required: true },
+        brandLogo: { type: String, required: true },
+        brandNiche: { type: String, required: true },
         promotionPicture: { type: String },
+        promotionArrayPictures: [{ img: { type: String } }],
         description: { type: String },
         compensation: { type: String },
         deadline: { type: Date },

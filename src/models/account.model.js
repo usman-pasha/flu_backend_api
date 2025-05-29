@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 const schema = mongoose.Schema;
+import paginate from "mongoose-paginate-v2";
+import aggregatePaginate from "mongoose-aggregate-paginate-v2";
 
 const accountSchema = new schema(
     {
@@ -32,5 +34,7 @@ const accountSchema = new schema(
 );
 
 accountSchema.index({ userId: 1 }, { unique: true });
+accountSchema.plugin(paginate);
+accountSchema.plugin(aggregatePaginate);
 
 export const accountModel = mongoose.model("account", accountSchema);

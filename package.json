@@ -6,8 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "nodemon ./src/index.js",
-    "install-service": "node ./src/installAppService.js",
-    "uninstall-service": "node ./src/uninstallAppService.js"
+    "admin": "node ./src/scripts/index.js"
   },
   "keywords": [],
   "author": "",
@@ -16,8 +15,10 @@
     "axios": "^1.8.4",
     "axios-retry": "^4.5.0",
     "bcryptjs": "^3.0.2",
+    "cloudinary": "^2.6.1",
     "cors": "^2.8.5",
     "crypto-js": "^4.2.0",
+    "dotenv": "^16.5.0",
     "edge-js": "^23.1.6",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",

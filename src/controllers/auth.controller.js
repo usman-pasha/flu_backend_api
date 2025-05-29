@@ -72,6 +72,14 @@ class authController {
         console.log(data);
         return responser.send(200, "Successfully password OTP sent!", req, res, data);
     };
+
+    // adminlogin 
+    adminLogin = async (req, res) => {
+        const reqData = req.body;
+        const data = await authService.adminLogin(reqData);
+        console.log(data);
+        return responser.send(200, `Successfully Admin Login`, req, res, data);
+    };
 }
 
 export default new authController();

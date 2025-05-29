@@ -14,31 +14,42 @@ class accountController {
     };
     getAllAccounts = async (req, res) => {
         const reqQuery = req.query;
-        const data = await getAllAccounts(reqQuery);
+        const data = await accountService.getAllAccounts(reqQuery);
         logger.info(data);
         return responser.send(200, `Successfully All Accounts Fetched`, req, res, data);
     };
 
     getOnlyOneAccount = async (req, res) => {
         const reqParams = req.params;
-        const data = await getOnlyOneAccount(reqParams.accountId);
+        const data = await accountService.getOnlyOneAccount(reqParams.accountId);
         logger.info(data);
         return responser.send(200, `Successfully Single Account Fetched`, req, res, data);
     };
 
     updateAccount = async (req, res) => {
+        const reqParams = req.params;
         const reqData = req.body;
-        const loggedInUser = req.user;
-        const data = await accountService.updateAccount(reqData, loggedInUser);
+        reqData.userId = req.userId;
+        const data = await accountService.updateAccount(reqParams.accountId, reqData);
         logger.info(data);
         return responser.send(200, `Successfully Account Updated`, req, res, data);
     };
 
     deleteAccount = async (req, res) => {
         const reqParams = req.params;
-        const data = await deleteAccount(reqParams.accountId);
+        const data = await accountService.deleteAccount(reqParams.accountId);
         logger.info(data);
         return responser.send(200, `Successfully Account Deleted`, req, res, data);
+    };
+
+    // republish
+    republishAccount = async (req, res) => {
+        const reqParams = req.params;
+        const reqData = req.body;
+        reqData.userId = req.userId;
+        const data = await accountService.republishAccount(reqParams.accountId, reqData);
+        logger.info(data);
+        return responser.send(200, `Successfully Account Status Updated`, req, res, data);
     };
 }
 

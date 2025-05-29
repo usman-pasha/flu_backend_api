@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 const schema = mongoose.Schema;
+import paginate from "mongoose-paginate-v2";
+import aggregatePaginate from "mongoose-aggregate-paginate-v2";
 
 const userSchema = new schema(
     {
@@ -26,5 +28,7 @@ const userSchema = new schema(
 );
 
 userSchema.index({ email: true })
+userSchema.plugin(paginate);
+userSchema.plugin(aggregatePaginate);
 
 export const userModel = mongoose.model("user", userSchema);

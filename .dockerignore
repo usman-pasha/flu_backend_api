@@ -1,0 +1,24 @@
+# Node modules should not be included
+node_modules
+
+# Logs
+*.log
+logs
+npm-debug.log*
+
+# Environment files
+.env
+.env.* 
+
+# Git
+.git
+.gitignore
+
+# Docker-specific
+Dockerfile
+.dockerignore
+
+# OS or IDE-specific files
+.DS_Store
+.vscode
+.idea

@@ -222,14 +222,20 @@ export const loginWithPhoneOtp = async (body) => {
     const loginToken = await createLogin(user);
     const account = await accountService.findOneRecord({ userId: user._id });
     const accountCompleted = account?.profileCompleted === true;
-    const profileCompleted = account?.profileCompleted === true ? "active" : "pending";
+    // changed to account success
+    let accountApproved;
+    if (account?.accountStatus === null) {
+        accountApproved = "still account not created"
+    } else {
+        accountApproved = account?.accountStatus
+    }
 
     logger.info(`User ${user.phoneNumber} logged in successfully via phone OTP.`);
 
     return {
         ...loginToken,
         accountCompleted,
-        profileCompleted
+        accountApproved
     };
 }
 
@@ -426,4 +432,39 @@ export const resendResetPasswordOTP = async (body) => {
 
     logger.info(`Resent reset password OTP to ${user.phoneNumber || user.email} successfully.`);
     return `OTP sent successfully to ${identifier}.`;
+};
+
+// 5.admin login with email and password 
+export const adminLogin = async (body) => {
+    logger.info("Login Service Started");
+
+    // Check if phone number and password are provided
+    if (!body.email || !body.password) {
+        throw new AppError(404, "Email and Password are required.");
+    }
+
+    // Find the user by phone number
+    const user = await userService.findOneRecord({ email: body.email });
+    if (!user) {
+        throw new AppError(400, "User not found with the provided Email.");
+    }
+
+    // Check if the phone number is verified
+    if (user.emailIsVerified !== true) {
+        throw new AppError(400, "Email is not verified. Please verify your email first.");
+    }
+
+    // Compare the provided password with the stored password
+    const isPasswordValid = compareHashPassword(body.password, user.password);
+    if (!isPasswordValid) {
+        throw new AppError(400, "Invalid password. Please try again.");
+    }
+
+    // Create and return the login token
+    const loginToken = await createLogin(user);
+    logger.info(`User ${user.email} logged in successfully.`);
+  
+    return {
+        ...loginToken,
+    };
 };
