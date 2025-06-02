@@ -229,13 +229,15 @@ export const loginWithPhoneOtp = async (body) => {
     } else {
         accountApproved = account?.accountStatus
     }
+    let accountRejected = account?.accountStatus === "rejected" ? account?.reasonForRejection : undefined;
 
     logger.info(`User ${user.phoneNumber} logged in successfully via phone OTP.`);
 
     return {
         ...loginToken,
         accountCompleted,
-        accountApproved
+        accountApproved,
+        accountRejected
     };
 }
 
@@ -269,18 +271,32 @@ export const login = async (body) => {
     }
 
     // Create and return the login token
-    const loginToken = await createLogin(user);
+    // const loginToken = await createLogin(user);
+    // logger.info(`User ${user.email} logged in successfully.`);
+    // const account = await accountService.findOneRecord({ userId: user._id });
+    // const accountCompleted = account?.profileCompleted === true;
+    // const profileCompleted = account?.profileCompleted === true ? "active" : "pending";
+
     logger.info(`User ${user.email} logged in successfully.`);
+    const loginToken = await createLogin(user);
     const account = await accountService.findOneRecord({ userId: user._id });
     const accountCompleted = account?.profileCompleted === true;
-    const profileCompleted = account?.profileCompleted === true ? "active" : "pending";
+    // changed to account success
+    let accountApproved;
+    if (account?.accountStatus === null) {
+        accountApproved = "still account not created"
+    } else {
+        accountApproved = account?.accountStatus
+    }
+    let accountRejected = account?.accountStatus === "rejected" ? account?.reasonForRejection : undefined;
 
     logger.info(`User ${user.phoneNumber} logged in successfully via phone OTP.`);
 
     return {
         ...loginToken,
         accountCompleted,
-        profileCompleted
+        accountApproved,
+        accountRejected
     };
 };
 
@@ -463,7 +479,7 @@ export const adminLogin = async (body) => {
     // Create and return the login token
     const loginToken = await createLogin(user);
     logger.info(`User ${user.email} logged in successfully.`);
-  
+
     return {
         ...loginToken,
     };

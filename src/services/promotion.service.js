@@ -82,7 +82,6 @@ export const createPromotion = async (body, loggedIn) => {
 
     // Create record
     const payload = {
-        promotion,
         compensation,
         deadline,
         platform,
