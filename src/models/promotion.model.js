@@ -25,6 +25,7 @@ const promotionSchema = new schema(
         termsOfCollaboration: { type: String },
         postedOn: { type: Date, default: Date.now },
         interestedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: "user" }],
+        savedByUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: "user" }],
         createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true },
         updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "user" },
     },

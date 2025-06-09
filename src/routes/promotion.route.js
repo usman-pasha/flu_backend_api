@@ -8,7 +8,7 @@ const promotionRoute = express.Router();
 promotionRoute
     .route("/createPromotion")
     .post(verifyAuth,
-        authorizePermissions("user"),
+        authorizePermissions("admin"),
         catchError(promotionController.createPromotion));
 
 // Anyone can view a single promotion (optional: protect if needed)
@@ -25,14 +25,24 @@ promotionRoute
 promotionRoute
     .route("/updatePromotion/:promotionId")
     .patch(verifyAuth,
-        authorizePermissions("user"),
+        authorizePermissions("admin"),
         catchError(promotionController.updatePromotion));
 
 // Allow promotion deletion (creator or admin)
 promotionRoute
     .route("/deletePromotion/:promotionId ")
     .delete(verifyAuth,
-        authorizePermissions("user"),
+        authorizePermissions("admin"),
         catchError(promotionController.deletePromotion));
+
+promotionRoute
+    .route("/apply/:promotionId")
+    .patch(verifyAuth,
+        catchError(promotionController.applyPromotion));
+
+promotionRoute
+    .route("/save/:promotionId")
+    .patch(verifyAuth,
+        catchError(promotionController.savePromotion));
 
 export default promotionRoute;

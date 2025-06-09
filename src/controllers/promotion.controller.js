@@ -42,6 +42,22 @@ class promotionController {
         logger.info(data);
         return responser.send(200, `Successfully Promotion Deleted`, req, res, data);
     };
+
+    applyPromotion = async (req, res) => {
+        const reqParams = req.params;
+        const loggedInUser = req.user;
+        const data = await promotionService.applyPromotion(reqParams.promotionId, loggedInUser);
+        logger.info(data);
+        return responser.send(200, `Successfully Promotion Applied`, req, res, data);
+    };
+
+    savePromotion = async (req, res) => {
+        const reqParams = req.params;
+        const loggedInUser = req.user;
+        const data = await promotionService.savePromotion(reqParams.promotionId, loggedInUser);
+        logger.info(data);
+        return responser.send(200, `Successfully Promotion Saved`, req, res, data);
+    };
 }
 
 export default new promotionController();

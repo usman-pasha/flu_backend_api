@@ -4,6 +4,7 @@ import AppError from "../core/appError.js";
 import * as userService from "./user.service.js";
 import APIFeatures from "../core/apiFeature.js";
 import { uploadArrayImage, uploadOnCloudinary } from "../core/cloudImage.js";
+import * as accountService from "./account.service.js";
 
 export const createRecord = async (object) => {
     const record = await promotionModel.create(object);
@@ -154,4 +155,72 @@ export const deletePromotion = async (promotionId) => {
     const promotion = await promotionModel.findByIdAndDelete({ _id: promotionId });
     if (promotion.length <= 0) throw new AppError(404, "Promotion Not Found");
     return true;
+};
+
+// apply 
+export const applyPromotion = async (promotionId, loggedInUser) => {
+    logger.info("START: Apply Promotion");
+    // Validate inputs
+    if (!promotionId || !loggedInUser?._id) {
+        throw new AppError(400, "Invalid promotionId or user.");
+    }
+    // Find the promotion
+    const promotion = await promotionModel.findById(promotionId);
+    if (!promotion) {
+        throw new AppError(404, "Promotion Not Found");
+    }
+
+    // Check if user already applied
+    if (promotion.interestedUsers.includes(loggedInUser._id)) {
+        logger.info("User has already applied for this promotion.");
+        throw new AppError(409, "User has already applied for this promotion.");
+    }
+
+    // Update promotion by pushing user ID
+    await promotionModel.findByIdAndUpdate(
+        promotion._id,
+        { $push: { interestedUsers: loggedInUser._id } },
+        { new: true }
+    );
+
+    logger.info("END: Apply Promotion");
+    return `Successfully applied promotion for user ${loggedInUser._id}`;
+};
+
+// save
+export const savePromotion = async (promotionId, loggedInUser) => {
+    logger.info("START: Save Promotion");
+
+    // Validate inputs
+    if (!promotionId || !loggedInUser?._id) {
+        throw new AppError(400, "Invalid promotionId or user.");
+    }
+
+    // Find the promotion
+    const promotion = await promotionModel.findById(promotionId);
+    if (!promotion) {
+        throw new AppError(404, "Promotion Not Found");
+    }
+
+    // Check if user already saved
+    if (promotion.savedByUsers.includes(loggedInUser._id)) {
+        logger.info("User has already saved this promotion.");
+        throw new AppError(409, "User has already saved this promotion.");
+    }
+
+    // Add user to promotion's saved list
+    await promotionModel.findByIdAndUpdate(
+        promotionId,
+        { $addToSet: { savedByUsers: loggedInUser._id } },
+        { new: true }
+    );
+
+    // Add promotion to user's saved list
+    await accountService.updateRecord(
+        { userId: loggedInUser._id },
+        { $addToSet: { savedPromotions: promotionId } },
+    );
+
+    logger.info("END: Save Promotion");
+    return `Successfully saved promotion for user ${loggedInUser._id}`;
 };

@@ -35,12 +35,6 @@ export const createAccount = async (body, loggedInUser) => {
         "city",
         "state",
         "areaOfWork",
-        "facebookUrl",
-        "instaUrl",
-        "youtubeUrl",
-        "facebookSubscriberCount",
-        "instaFollowerCount",
-        "youtubeSubscriberCount"
     ];
 
     for (const field of requiredFields) {
@@ -72,6 +66,13 @@ export const createAccount = async (body, loggedInUser) => {
     // Optional fields
     if (body.firstName) payloadData.firstName = body.firstName;
     if (body.lastName) payloadData.lastName = body.lastName;
+    if (body.facebookUrl) payloadData.facebookUrl = body.facebookUrl;
+    if (body.instaUrl) payloadData.instaUrl = body.instaUrl;
+    if (body.youtubeUrl) payloadData.youtubeUrl = body.youtubeUrl;
+    if (body.facebookSubscriberCount) payloadData.facebookSubscriberCount = body.facebookSubscriberCount;
+    if (body.instaFollowerCount) payloadData.instaFollowerCount = body.instaFollowerCount;
+    if (body.youtubeSubscriberCount) payloadData.youtubeSubscriberCount = body.youtubeSubscriberCount;
+
     if (body.profilePicture) {
         const singlePicture = await uploadOnCloudinary(body.profilePicture, "Profile")
         payloadData.profilePicture = singlePicture?.secure_url
@@ -103,7 +104,7 @@ export const getAllAccounts = async (query) => {
         .populate(populateQuery)
         .exec(accountModel);
     console.log(record);
-        
+
     return record.data;
 };
 
