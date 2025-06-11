@@ -45,4 +45,22 @@ promotionRoute
     .patch(verifyAuth,
         catchError(promotionController.savePromotion));
 
+promotionRoute
+    .route("/applied-users")
+    .get(catchError(promotionController.getAllAppliedUsersByStatus));
+
+promotionRoute
+    .route("/applied-counts")
+    .get(catchError(promotionController.getAppliedUsersStatusCounts));
+
+promotionRoute
+    .route("/update-status/:promotionId")
+    .patch(verifyAuth,
+        catchError(promotionController.updatePromotionUserStatus));
+
+promotionRoute
+    .route("/active-promotion-status/:promotionId")
+    .patch(verifyAuth,
+        catchError(promotionController.activePromotionStatus));
+
 export default promotionRoute;

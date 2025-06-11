@@ -15,7 +15,7 @@ const promotionSchema = new schema(
         deadline: { type: Date },
         platform: { type: String },
         location: { type: String },
-        verificationStatus: { type: String, enum: ["pending", "approved", "rejected"], default: "pending" },
+        verificationStatus: { type: String, enum: ["pending", "active", "deleted", "expired"], default: "pending" },
         donts: [{ type: String }],
         script: { type: String },
         requirements: [{ type: String }],
@@ -24,7 +24,22 @@ const promotionSchema = new schema(
         links: [{ type: String }],
         termsOfCollaboration: { type: String },
         postedOn: { type: Date, default: Date.now },
-        interestedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: "user" }],
+        // interestedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: "user" }],
+        appliedUsers: [
+            {
+                accountId: { type: mongoose.Schema.Types.ObjectId, ref: "account" },
+                status: {
+                    type: String,
+                    enum: ["under review", "approved", "rejected"],
+                    default: "under review"
+                },
+                rejectedReason: { type: String },
+                appliedAt: { type: Date, default: Date.now },
+                approvedAt: { type: Date, default: Date.now },
+                rejectedAt: { type: Date, default: Date.now },
+
+            }
+        ],
         savedByUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: "user" }],
         createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true },
         updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "user" },

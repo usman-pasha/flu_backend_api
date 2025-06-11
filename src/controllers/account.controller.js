@@ -51,6 +51,18 @@ class accountController {
         logger.info(data);
         return responser.send(200, `Successfully Account Status Updated`, req, res, data);
     };
+
+    getAllAccountsByStatus = async (req, res) => {
+        const data = await accountService.getAllAccountsByStatus(req.query);
+        logger.info(data);
+        return responser.send(200, `Successfully Fetched All Accounts By Status`, req, res, data);
+    };
+
+    getAccountStatusCounts = async (req, res) => {
+        const data = await accountService.getAccountStatusCounts()
+        logger.info(data);
+        return responser.send(200, `Successfully Fetched All Accounts Counts`, req, res, data);
+    };
 }
 
 export default new accountController();

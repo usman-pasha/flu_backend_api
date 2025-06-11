@@ -103,8 +103,6 @@ export const getAllAccounts = async (query) => {
         .paginate()
         .populate(populateQuery)
         .exec(accountModel);
-    console.log(record);
-
     return record.data;
 };
 
@@ -115,7 +113,7 @@ export const getOnlyOneAccount = async (accountId) => {
         { path: "createdBy", select: ["_id", "username", "accountType"] },
         { path: "updatedBy", select: ["_id", "username", "accountType"] }
     ];
-    const account = await accountModel.findOne({ _id: accountId }).populate(populateQuery);;
+    const account = await accountModel.findOne({ _id: accountId }).select("-__v -savedPromotions").populate(populateQuery);;
     return account;
 };
 
@@ -199,3 +197,117 @@ export const republishAccount = async (accountId, body) => {
     return record;
 };
 
+// get all status
+export const getAllAccountsByStatus = async (query) => {
+    const { status, page = 1, limit = 10 } = query;
+
+    const validStatuses = ["pending", "approved", "rejected", "today"];
+    const inputStatus = (status || "").trim().toLowerCase();
+
+    if (!validStatuses.includes(inputStatus)) {
+        throw new AppError(400, "Invalid status query parameter");
+    }
+
+    const pageNumber = parseInt(page);
+    const pageSize = parseInt(limit);
+    const skip = (pageNumber - 1) * pageSize;
+
+    const matchStage = {};
+    if (inputStatus === "today") {
+        const date24HoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        matchStage["createdAt"] = { $gte: date24HoursAgo };
+    } else {
+        matchStage["accountStatus"] = inputStatus;
+    }
+
+    const aggregationPipeline = [
+        { $match: matchStage },
+        {
+            $project: {
+                _id: 1,
+                fullName: { $concat: ["$firstName", " ", "$lastName"] },
+                profilePicture: 1,
+                gender: 1,
+                areaOfWork: 1,
+                city: 1,
+                state: 1,
+                accountStatus: 1,
+                reasonForRejection: 1,
+                createdAt: 1
+            }
+        },
+        { $sort: { createdAt: -1 } },
+        { $skip: skip },
+        { $limit: pageSize }
+    ];
+
+    const result = await accountModel.aggregate(aggregationPipeline);
+
+    const totalCountAgg = await accountModel.aggregate([
+        { $match: matchStage },
+        { $count: "total" }
+    ]);
+
+    const total = totalCountAgg[0]?.total || 0;
+    const totalPages = Math.ceil(total / pageSize);
+    const hasNextPage = pageNumber < totalPages;
+    const hasPrevPage = pageNumber > 1;
+    const nextPage = hasNextPage ? pageNumber + 1 : null;
+    const prevPage = hasPrevPage ? pageNumber - 1 : null;
+
+    return {
+        docs: result,
+        total,
+        page: pageNumber,
+        limit: pageSize,
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
+        nextPage,
+        prevPage
+    };
+};
+
+// counts 
+export const getAccountStatusCounts = async () => {
+    const now = new Date();
+    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000); // 24 hours ago
+
+    // Step 1: Get counts grouped by accountStatus
+    const statusAggregation = await accountModel.aggregate([
+        {
+            $group: {
+                _id: "$accountStatus",
+                count: { $sum: 1 }
+            }
+        }
+    ]);
+
+    // Step 2: Get count for accounts created in the last 24 hours
+    const todayAggregation = await accountModel.aggregate([
+        {
+            $match: {
+                createdAt: { $gte: yesterday }
+            }
+        },
+        {
+            $count: "today"
+        }
+    ]);
+
+    // Step 3: Format result
+    const statusCounts = {
+        pending: 0,
+        approved: 0,
+        rejected: 0,
+        today: todayAggregation[0]?.today || 0
+    };
+
+    statusAggregation.forEach(entry => {
+        if (statusCounts.hasOwnProperty(entry._id)) {
+            statusCounts[entry._id] = entry.count;
+        }
+    });
+
+    return statusCounts;
+};

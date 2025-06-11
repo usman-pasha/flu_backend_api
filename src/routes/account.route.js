@@ -25,5 +25,11 @@ accountRoute
 accountRoute
   .route("/republish/:accountId")
   .patch(verifyAuth, authorizePermissions("admin"), catchError(accountController.republishAccount));
+accountRoute
+  .route("/accountStatus")
+  .get(catchError(accountController.getAllAccountsByStatus));
+accountRoute
+  .route("/account-counts")
+  .get(catchError(accountController.getAccountStatusCounts));
 
 export default accountRoute;

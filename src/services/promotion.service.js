@@ -122,7 +122,6 @@ export const getAllPromotions = async (query) => {
         .paginate()
         .populate(populateQuery)
         .exec(promotionModel);
-
     return record.data;
 };
 
@@ -164,25 +163,35 @@ export const applyPromotion = async (promotionId, loggedInUser) => {
     if (!promotionId || !loggedInUser?._id) {
         throw new AppError(400, "Invalid promotionId or user.");
     }
+    const account = await accountService.findOneRecord({ userId: loggedInUser?._id })
+    if (!account) throw new AppError(404, "Account Not Found.");
     // Find the promotion
     const promotion = await promotionModel.findById(promotionId);
     if (!promotion) {
         throw new AppError(404, "Promotion Not Found");
     }
-
     // Check if user already applied
-    if (promotion.interestedUsers.includes(loggedInUser._id)) {
+    const alreadyApplied = promotion.appliedUsers.some(
+        (appliedUser) => appliedUser.accountId.toString() === account._id.toString()
+    );
+
+    if (alreadyApplied) {
         logger.info("User has already applied for this promotion.");
         throw new AppError(409, "User has already applied for this promotion.");
     }
-
-    // Update promotion by pushing user ID
+    // Push user with default status
     await promotionModel.findByIdAndUpdate(
         promotion._id,
-        { $push: { interestedUsers: loggedInUser._id } },
+        {
+            $push: {
+                appliedUsers: {
+                    accountId: account._id,
+                    status: "under review",
+                },
+            },
+        },
         { new: true }
     );
-
     logger.info("END: Apply Promotion");
     return `Successfully applied promotion for user ${loggedInUser._id}`;
 };
@@ -223,4 +232,207 @@ export const savePromotion = async (promotionId, loggedInUser) => {
 
     logger.info("END: Save Promotion");
     return `Successfully saved promotion for user ${loggedInUser._id}`;
+};
+
+// admin filter
+export const getAllAppliedUsersByStatus = async (query) => {
+    const { status, page = 1, limit = 10 } = query;
+
+    const validStatuses = ["under review", "approved", "rejected", "today"];
+    const inputStatus = (status || "").trim().toLowerCase();
+
+    if (!validStatuses.includes(inputStatus)) {
+        throw new AppError(400, "Invalid status query parameter");
+    }
+
+    const pageNumber = parseInt(page);
+    const pageSize = parseInt(limit);
+    const skip = (pageNumber - 1) * pageSize;
+
+    // Prepare match condition
+    const matchStage = {};
+    if (inputStatus === "today") {
+        const date24HoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        matchStage["appliedUsers.appliedAt"] = { $gte: date24HoursAgo };
+    } else {
+        matchStage["appliedUsers.status"] = inputStatus;
+    }
+
+    const result = await promotionModel.aggregate([
+        { $unwind: "$appliedUsers" },
+        { $match: matchStage },
+        {
+            $lookup: {
+                from: "accounts",
+                localField: "appliedUsers.accountId",
+                foreignField: "_id",
+                as: "userDetails"
+            }
+        },
+        { $unwind: "$userDetails" },
+        {
+            $project: {
+                _id: 0,
+                promotionId: "$_id",
+                status: "$appliedUsers.status",
+                rejectedReason: "$appliedUsers.rejectedReason",
+                fullName: {
+                    $concat: ["$userDetails.firstName", " ", "$userDetails.lastName"]
+                },
+                profilePicture: "$userDetails.profilePicture",
+                location: "$userDetails.location",
+                appliedAt: "$appliedUsers.appliedAt"
+            }
+        },
+        { $skip: skip },
+        { $limit: pageSize }
+    ]);
+
+    const total = await promotionModel.aggregate([
+        { $unwind: "$appliedUsers" },
+        { $match: matchStage },
+        { $count: "total" }
+    ]);
+    const totalPages = Math.ceil(total / pageSize);
+    return {
+        docs: result,
+        total: total[0]?.total || 0,
+        page: pageNumber,
+        limit: pageSize,
+        totalPages
+    };
+};
+
+// admin counts 
+export const getAppliedUsersStatusCounts = async () => {
+    const now = new Date();
+    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000); // 24 hours ago
+
+    // Step 1: Get status-wise counts
+    const statusAggregation = await promotionModel.aggregate([
+        { $unwind: "$appliedUsers" },
+        {
+            $group: {
+                _id: "$appliedUsers.status",
+                count: { $sum: 1 }
+            }
+        }
+    ]);
+
+    // Step 2: Get count for entries applied in last 24 hours
+    const todayAggregation = await promotionModel.aggregate([
+        { $unwind: "$appliedUsers" },
+        {
+            $match: {
+                "appliedUsers.appliedAt": { $gte: yesterday }
+            }
+        },
+        {
+            $count: "today"
+        }
+    ]);
+
+    // Prepare response object
+    const statusCounts = {
+        "under review": 0,
+        "approved": 0,
+        "rejected": 0,
+        "today": todayAggregation[0]?.today || 0
+    };
+
+    statusAggregation.forEach(entry => {
+        statusCounts[entry._id] = entry.count;
+    });
+
+    return statusCounts
+};
+
+// update status admin
+export const updatePromotionUserStatus = async (promotionId, body) => {
+    logger.info("START: Update Promotion User Status");
+
+    if (!promotionId || !body.status || !body.accountId) {
+        throw new AppError(400, "Promotion ID, and status are required.");
+    }
+
+    const validStatuses = ["approved", "rejected"];
+    if (!validStatuses.includes(body.status)) {
+        throw new AppError(400, "Status must be either 'approved' or 'rejected'.");
+    }
+
+    // Check if user has applied to promotion
+    const promotion = await promotionModel.findOne({
+        _id: promotionId,
+        "appliedUsers.accountId": body.accountId,
+    });
+
+    if (!promotion) {
+        throw new AppError(404, "User application not found for this promotion.");
+    }
+
+    // Prepare fields to update
+    const updateFields = {
+        "appliedUsers.$.status": body.status,
+    };
+
+    if (body.status === "rejected") {
+        updateFields["appliedUsers.$.rejectedReason"] = body.reason || "No reason provided";
+        updateFields["appliedUsers.$.rejectedAt"] = new Date();
+    }
+
+    if (body.status === "approved") {
+        updateFields["appliedUsers.$.approvedAt"] = new Date();
+    }
+
+    // Perform the update
+    const result = await promotionModel.updateOne(
+        {
+            _id: promotionId,
+            "appliedUsers.accountId": body.accountId,
+        },
+        {
+            $set: updateFields,
+        }
+    );
+
+    if (result.modifiedCount === 0) {
+        throw new AppError(500, "Failed to update user application status.");
+    }
+
+    logger.info("END: Update Promotion User Status");
+    return `User ${body.accountId} has been ${body.status} for promotion ${promotionId}`;
+};
+
+// change status of promotion
+export const activePromotionStatus = async (promotionId, body) => {
+    logger.info("START: Update Promotion User Status");
+
+    if (!promotionId || !body.status) {
+        throw new AppError(400, "Promotion ID, and status are required.");
+    }
+
+    const validStatuses = ["active"];
+    if (!validStatuses.includes(body.status)) {
+        throw new AppError(400, "Status must be either 'active'.");
+    }
+
+    // Check if user has applied to promotion
+    const promotion = await promotionModel.findOne({
+        _id: promotionId,
+    });
+
+    if (!promotion) {
+        throw new AppError(404, "Promotion not found");
+    }
+
+    // Prepare fields to update
+    const updateFields = {
+        verificationStatus: body.status,
+    };
+
+    // Perform the update
+    const result = await updateRecord({ _id: promotionId }, updateFields)
+
+    logger.info("END: Update Promotion Status");
+    return `${body.status} for promotion ${promotionId}`;
 };

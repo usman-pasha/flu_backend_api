@@ -58,6 +58,36 @@ class promotionController {
         logger.info(data);
         return responser.send(200, `Successfully Promotion Saved`, req, res, data);
     };
+
+    getAllAppliedUsersByStatus = async (req, res) => {
+        const data = await promotionService.getAllAppliedUsersByStatus(req.query);
+        logger.info(data);
+        return responser.send(200, `Successfully Fetched All Accounts`, req, res, data);
+    };
+
+    getAppliedUsersStatusCounts = async (req, res) => {
+        const data = await promotionService.getAppliedUsersStatusCounts(req.query);
+        logger.info(data);
+        return responser.send(200, `Successfully Fetched All Counts`, req, res, data);
+    };
+
+    updatePromotionUserStatus = async (req, res) => {
+        const reqData = req.body;
+        reqData.userId = req.user;
+        const reqParams = req.params;
+        const data = await promotionService.updatePromotionUserStatus(reqParams.promotionId, reqData);
+        logger.info(data);
+        return responser.send(200, `Successfully Status Updated`, req, res, data);
+    };
+
+    activePromotionStatus = async (req, res) => {
+        const reqData = req.body;
+        reqData.userId = req.user;
+        const reqParams = req.params;
+        const data = await promotionService.activePromotionStatus(reqParams.promotionId, reqData);
+        logger.info(data);
+        return responser.send(200, `Successfully promotion Status Updated`, req, res, data);
+    };
 }
 
 export default new promotionController();
