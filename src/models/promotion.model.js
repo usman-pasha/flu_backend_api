@@ -40,7 +40,7 @@ const promotionSchema = new schema(
 
             }
         ],
-        savedByUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: "user" }],
+        // savedByUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: "user" }],
         createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true },
         updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "user" },
     },

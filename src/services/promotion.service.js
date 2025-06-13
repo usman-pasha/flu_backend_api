@@ -1,4 +1,5 @@
 import { promotionModel } from "../models/promotion.model.js";
+import { accountModel } from "../models/account.model.js";
 import * as logger from "../utils/log.js";
 import AppError from "../core/appError.js";
 import * as userService from "./user.service.js";
@@ -154,84 +155,6 @@ export const deletePromotion = async (promotionId) => {
     const promotion = await promotionModel.findByIdAndDelete({ _id: promotionId });
     if (promotion.length <= 0) throw new AppError(404, "Promotion Not Found");
     return true;
-};
-
-// apply 
-export const applyPromotion = async (promotionId, loggedInUser) => {
-    logger.info("START: Apply Promotion");
-    // Validate inputs
-    if (!promotionId || !loggedInUser?._id) {
-        throw new AppError(400, "Invalid promotionId or user.");
-    }
-    const account = await accountService.findOneRecord({ userId: loggedInUser?._id })
-    if (!account) throw new AppError(404, "Account Not Found.");
-    // Find the promotion
-    const promotion = await promotionModel.findById(promotionId);
-    if (!promotion) {
-        throw new AppError(404, "Promotion Not Found");
-    }
-    // Check if user already applied
-    const alreadyApplied = promotion.appliedUsers.some(
-        (appliedUser) => appliedUser.accountId.toString() === account._id.toString()
-    );
-
-    if (alreadyApplied) {
-        logger.info("User has already applied for this promotion.");
-        throw new AppError(409, "User has already applied for this promotion.");
-    }
-    // Push user with default status
-    await promotionModel.findByIdAndUpdate(
-        promotion._id,
-        {
-            $push: {
-                appliedUsers: {
-                    accountId: account._id,
-                    status: "under review",
-                },
-            },
-        },
-        { new: true }
-    );
-    logger.info("END: Apply Promotion");
-    return `Successfully applied promotion for user ${loggedInUser._id}`;
-};
-
-// save
-export const savePromotion = async (promotionId, loggedInUser) => {
-    logger.info("START: Save Promotion");
-
-    // Validate inputs
-    if (!promotionId || !loggedInUser?._id) {
-        throw new AppError(400, "Invalid promotionId or user.");
-    }
-
-    // Find the promotion
-    const promotion = await promotionModel.findById(promotionId);
-    if (!promotion) {
-        throw new AppError(404, "Promotion Not Found");
-    }
-
-    // Check if user already saved
-    if (promotion.savedByUsers.includes(loggedInUser._id)) {
-        logger.info("User has already saved this promotion.");
-        throw new AppError(409, "User has already saved this promotion.");
-    }
-
-    // Add user to promotion's saved list
-    await promotionModel.findByIdAndUpdate(
-        promotionId,
-        { $addToSet: { savedByUsers: loggedInUser._id } },
-        { new: true }
-    );
-
-    // Add promotion to user's saved list
-    await accountService.updateRecord(
-        { userId: loggedInUser._id },
-        { $addToSet: { savedPromotions: promotionId } },
-    );
-
-    logger.info("END: Save Promotion");
-    return `Successfully saved promotion for user ${loggedInUser._id}`;
 };
 
 // admin filter
@@ -436,3 +359,240 @@ export const activePromotionStatus = async (promotionId, body) => {
     logger.info("END: Update Promotion Status");
     return `${body.status} for promotion ${promotionId}`;
 };
+
+// ----------------------------------------------------------------
+// USER Promotions
+// ----------------------------------------------------------------
+
+// 1. get only active promotion to user 
+export const getActivePromotions = async (query) => {
+    logger.info("START: Get All Active Promotions");
+    const { page = 1, limit = 10 } = query;
+    const pageNumber = parseInt(page);
+    const pageSize = parseInt(limit);
+    const skip = (pageNumber - 1) * pageSize;
+    const condition = {
+        verificationStatus: "active"
+    };
+    // Fetch paginated results
+    const result = await promotionModel
+        .find(condition)
+        .skip(skip)
+        .limit(pageSize)
+        .lean();
+
+    // Count total matching documents
+    const total = await promotionModel.countDocuments(condition);
+    const totalPages = Math.ceil(total / pageSize);
+    const hasNextPage = pageNumber < totalPages;
+    const hasPrevPage = pageNumber > 1;
+    const nextPage = hasNextPage ? pageNumber + 1 : null;
+    const prevPage = hasPrevPage ? pageNumber - 1 : null;
+    logger.info("END: Get All Active Promotions");
+    return {
+        docs: result,
+        total,
+        page: pageNumber,
+        limit: pageSize,
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
+        nextPage,
+        prevPage
+    };
+};
+
+// 2. You Can Use Admin Get
+export const getSinglePromotion = async (promotionId) => {
+    logger.info("START:Get Single Promotion");
+    const populateQuery = [
+        { path: "createdBy", select: ["_id", "username", "accountType"] },
+    ];
+    const promotion = await promotionModel.findOne({ _id: promotionId }).populate(populateQuery).select("-appliedUsers -__v -updatedBy -updatedAt -createdAt");
+    return promotion;
+};
+
+// 3. save promotion 
+export const savePromotion = async (promotionId, loggedInUser) => {
+    logger.info("START: Save Promotion");
+
+    // Validate inputs
+    if (!promotionId || !loggedInUser?._id) {
+        throw new AppError(400, "Invalid promotionId or user.");
+    }
+
+    // Find the promotion
+    const promotion = await promotionModel.findById(promotionId);
+    if (!promotion) {
+        throw new AppError(404, "Promotion Not Found");
+    }
+    // check in account model savedPromotions
+    const account = await accountModel.findOne({ userId: loggedInUser?._id });
+
+    // Check if user already saved
+    if (account.savedPromotions.includes(promotion._id)) {
+        logger.info("User has already saved this promotion.");
+        throw new AppError(409, "User has already saved this promotion.");
+    }
+
+    // Add promotion to user's saved list
+    await accountService.updateRecord(
+        { userId: loggedInUser._id },
+        { $addToSet: { savedPromotions: promotionId } },
+    );
+
+    logger.info("END: Save Promotion");
+    return `Successfully saved promotion for user ${loggedInUser._id}`;
+};
+
+// 4. apply promotion 
+export const applyPromotion = async (promotionId, loggedInUser) => {
+    logger.info("START: Apply Promotion");
+    // Validate inputs
+    if (!promotionId || !loggedInUser?._id) {
+        throw new AppError(400, "Invalid promotionId or user.");
+    }
+    const account = await accountService.findOneRecord({ userId: loggedInUser?._id })
+    if (!account) throw new AppError(404, "Account Not Found.");
+    // Find the promotion
+    const promotion = await promotionModel.findById(promotionId);
+    if (!promotion) {
+        throw new AppError(404, "Promotion Not Found");
+    }
+    // Check if user already applied
+    const alreadyApplied = promotion.appliedUsers.some(
+        (appliedUser) => appliedUser.accountId.toString() === account._id.toString()
+    );
+
+    if (alreadyApplied) {
+        logger.info("User has already applied for this promotion.");
+        throw new AppError(409, "User has already applied for this promotion.");
+    }
+    // Push user with default status
+    await promotionModel.findByIdAndUpdate(
+        promotion._id,
+        {
+            $push: {
+                appliedUsers: {
+                    accountId: account._id,
+                    status: "under review",
+                },
+            },
+        },
+        { new: true }
+    );
+    logger.info("END: Apply Promotion");
+    return `Successfully applied promotion for user ${loggedInUser._id}`;
+};
+
+// 5. Application status
+export const getPromotionsByApplicationStatus = async (query, loggedInUser) => {
+    const { status, page = 1, limit = 10 } = query;
+    const validStatuses = ["approved", "rejected", "under review"];
+    const inputStatus = (status || "").trim().toLowerCase();
+
+    if (!validStatuses.includes(inputStatus)) {
+        throw new AppError(400, "Invalid status query parameter");
+    }
+
+    // Get account linked to user
+    const account = await accountModel.findOne({ userId: loggedInUser._id });
+    if (!account) throw new AppError(404, "Account Not Found");
+
+    const pageNumber = parseInt(page);
+    const pageSize = parseInt(limit);
+    const skip = (pageNumber - 1) * pageSize;
+
+    const promotions = await promotionModel.aggregate([
+        { $unwind: "$appliedUsers" },
+        {
+            $match: {
+                "appliedUsers.accountId": account._id,
+                "appliedUsers.status": inputStatus
+            }
+        },
+        {
+            $project: {
+                _id: 1,
+                description: 1,
+                promotionPicture:1,
+                brandLogo:1,
+                brandName:1,
+                location:1,
+                platform:1,
+                compensation:1,
+                deadline:1,
+                brandNiche:1,
+                appliedAt: "$appliedUsers.appliedAt",
+                status: "$appliedUsers.status",
+
+            }
+        },
+        { $sort: { appliedAt: -1 } },  // Sort by newest first
+        { $skip: skip },
+        { $limit: pageSize }
+    ]);
+
+    const countResult = await promotionModel.aggregate([
+        { $unwind: "$appliedUsers" },
+        {
+            $match: {
+                "appliedUsers.accountId": account._id,
+                "appliedUsers.status": inputStatus
+            }
+        },
+        { $count: "total" }
+    ]);
+
+    const total = countResult[0]?.total || 0;
+
+    return {
+        docs: promotions,
+        total,
+        page: pageNumber,
+        limit: pageSize,
+        totalPages: Math.ceil(total / pageSize)
+    };
+};
+
+// 7.get save
+export const getPromotionsSaved = async (query, loggedInUser) => {
+    const { page = 1, limit = 10 } = query;
+    logger.info("userId");
+    logger.info(loggedInUser);
+
+    // Get account linked to user
+    const account = await accountModel.findOne({ userId: loggedInUser._id });
+    logger.data("account",account)
+    if (!account) throw new AppError(404, "Account Not Found");
+
+    const pageNumber = parseInt(page);
+    const pageSize = parseInt(limit);
+    const skip = (pageNumber - 1) * pageSize;
+
+    const savedPromotionIds = account.savedPromotions || [];
+
+    const total = savedPromotionIds.length;
+    const totalPages = Math.ceil(total / pageSize);
+
+    // Slice savedPromotionIds for pagination
+    const paginatedIds = savedPromotionIds.slice(skip, skip + pageSize);
+
+    // Fetch promotion documents with fields you want
+    const promotions = await promotionModel
+        .find({ _id: { $in: paginatedIds } })
+        .select("-createdBy -updatedBy -updatedAt -appliedUsers -__v") // Add/remove fields as needed
+        .sort({ createdAt: -1 });
+
+    return {
+        docs: promotions,
+        total,
+        page: pageNumber,
+        limit: pageSize,
+        totalPages
+    };
+};
+
+
+// 9. get my account
+// 10. update my account 

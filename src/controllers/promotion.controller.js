@@ -43,22 +43,6 @@ class promotionController {
         return responser.send(200, `Successfully Promotion Deleted`, req, res, data);
     };
 
-    applyPromotion = async (req, res) => {
-        const reqParams = req.params;
-        const loggedInUser = req.user;
-        const data = await promotionService.applyPromotion(reqParams.promotionId, loggedInUser);
-        logger.info(data);
-        return responser.send(200, `Successfully Promotion Applied`, req, res, data);
-    };
-
-    savePromotion = async (req, res) => {
-        const reqParams = req.params;
-        const loggedInUser = req.user;
-        const data = await promotionService.savePromotion(reqParams.promotionId, loggedInUser);
-        logger.info(data);
-        return responser.send(200, `Successfully Promotion Saved`, req, res, data);
-    };
-
     getAllAppliedUsersByStatus = async (req, res) => {
         const data = await promotionService.getAllAppliedUsersByStatus(req.query);
         logger.info(data);
@@ -87,6 +71,57 @@ class promotionController {
         const data = await promotionService.activePromotionStatus(reqParams.promotionId, reqData);
         logger.info(data);
         return responser.send(200, `Successfully promotion Status Updated`, req, res, data);
+    };
+
+    //-------------------------------------------------------------
+    // USER CONTROLLER STARTED FROM HERE ONWORDS 
+    //------------------------------------------------------------- 
+    // 1. 
+    getActivePromotions = async (req, res) => {
+        const reqQuery = req.query;
+        const data = await promotionService.getActivePromotions(reqQuery);
+        logger.info(data);
+        return responser.send(200, `Successfully Active Promotions Fetched`, req, res, data);
+    };
+    // 2.
+    getSinglePromotionByUser = async (req, res) => {
+        const reqParams = req.params;
+        const data = await promotionService.getSinglePromotion(reqParams.promotionId);
+        logger.info(data);
+        return responser.send(200, `Successfully Single Promotion Fetched`, req, res, data);
+    };
+    // 3. apply 
+    applyPromotion = async (req, res) => {
+        const reqParams = req.params;
+        const loggedInUser = req.user;
+        const data = await promotionService.applyPromotion(reqParams.promotionId, loggedInUser);
+        logger.info(data);
+        return responser.send(200, `Successfully Promotion Applied`, req, res, data);
+    };
+
+    // 4. save 
+    savePromotion = async (req, res) => {
+        const reqParams = req.params;
+        const loggedInUser = req.user;
+        const data = await promotionService.savePromotion(reqParams.promotionId, loggedInUser);
+        logger.info(data);
+        return responser.send(200, `Successfully Promotion Saved`, req, res, data);
+    };
+
+    // 5.Application Status  
+    getPromotionsByApplicationStatus = async (req, res) => {
+        const loggedIn = req.user
+        const data = await promotionService.getPromotionsByApplicationStatus(req.query, loggedIn);
+        logger.info(data);
+        return responser.send(200, `Successfully Fetched Application Status`, req, res, data);
+    };
+
+    // 6.saved Promotion 
+    getPromotionsSaved = async (req, res) => {
+        const loggedIn = req.user
+        const data = await promotionService.getPromotionsSaved(req.query, loggedIn);
+        logger.info(data);
+        return responser.send(200, `Successfully Fetched Saved Promotion`, req, res, data);
     };
 }
 

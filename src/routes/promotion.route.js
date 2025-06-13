@@ -36,16 +36,6 @@ promotionRoute
         catchError(promotionController.deletePromotion));
 
 promotionRoute
-    .route("/apply/:promotionId")
-    .patch(verifyAuth,
-        catchError(promotionController.applyPromotion));
-
-promotionRoute
-    .route("/save/:promotionId")
-    .patch(verifyAuth,
-        catchError(promotionController.savePromotion));
-
-promotionRoute
     .route("/applied-users")
     .get(catchError(promotionController.getAllAppliedUsersByStatus));
 
@@ -62,5 +52,43 @@ promotionRoute
     .route("/active-promotion-status/:promotionId")
     .patch(verifyAuth,
         catchError(promotionController.activePromotionStatus));
+
+//-------------------------------------------------------------
+// USER CONTROLLER STARTED FROM HERE ONWORDS 
+//------------------------------------------------------------- 
+// 1. Get Active Promotion
+promotionRoute
+    .route("/active")
+    .get(catchError(promotionController.getActivePromotions));
+
+// 2.
+promotionRoute
+    .route("/single/:promotionId")
+    .get(catchError(promotionController.getSinglePromotionByUser));
+
+
+// 3. apply 
+promotionRoute
+    .route("/apply/:promotionId")
+    .patch(verifyAuth,
+        catchError(promotionController.applyPromotion));
+
+// 4. save
+promotionRoute
+    .route("/save/:promotionId")
+    .patch(verifyAuth,
+        catchError(promotionController.savePromotion));
+
+// 5. Application status
+promotionRoute
+    .route("/by-status")
+    .get(verifyAuth,
+        catchError(promotionController.getPromotionsByApplicationStatus));
+
+// 6. get All save
+promotionRoute
+    .route("/saved")
+    .get(verifyAuth,
+        catchError(promotionController.getPromotionsSaved));
 
 export default promotionRoute;
