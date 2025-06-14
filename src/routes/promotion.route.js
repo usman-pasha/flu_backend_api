@@ -53,6 +53,10 @@ promotionRoute
     .patch(verifyAuth,
         catchError(promotionController.activePromotionStatus));
 
+promotionRoute
+    .route("/promotionCountLast")
+    .get(catchError(promotionController.countLast24HoursPromotions));
+
 //-------------------------------------------------------------
 // USER CONTROLLER STARTED FROM HERE ONWORDS 
 //------------------------------------------------------------- 

@@ -38,7 +38,7 @@ const uploadArrayImage = async (images, folderName) => {
             const base64String = imageObj.img;
 
             if (typeof base64String !== 'string') {
-                console.error('Invalid base64String for imageObj:', imageObj);
+                // console.error('Invalid base64String for imageObj:', imageObj);
                 return {
                     ...imageObj,
                     error: 'Invalid base64String'

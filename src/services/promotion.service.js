@@ -197,6 +197,13 @@ export const getAllAppliedUsersByStatus = async (query) => {
             $project: {
                 _id: 0,
                 promotionId: "$_id",
+                brandName: 1,
+                brandNiche: 1,
+                brandLogo: 1,
+                promotionPicture: 1,
+                platform: 1,
+                deadline: 1,
+                compensation: 1,
                 status: "$appliedUsers.status",
                 rejectedReason: "$appliedUsers.rejectedReason",
                 fullName: {
@@ -360,6 +367,16 @@ export const activePromotionStatus = async (promotionId, body) => {
     return `${body.status} for promotion ${promotionId}`;
 };
 
+export const countLast24HoursPromotions = async () => {
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const count = await promotionModel.countDocuments({
+        createdAt: { $gte: twentyFourHoursAgo }
+    });
+
+    return { totalPromotionsCounts: count };
+};
+
+
 // ----------------------------------------------------------------
 // USER Promotions
 // ----------------------------------------------------------------
@@ -515,14 +532,14 @@ export const getPromotionsByApplicationStatus = async (query, loggedInUser) => {
             $project: {
                 _id: 1,
                 description: 1,
-                promotionPicture:1,
-                brandLogo:1,
-                brandName:1,
-                location:1,
-                platform:1,
-                compensation:1,
-                deadline:1,
-                brandNiche:1,
+                promotionPicture: 1,
+                brandLogo: 1,
+                brandName: 1,
+                location: 1,
+                platform: 1,
+                compensation: 1,
+                deadline: 1,
+                brandNiche: 1,
                 appliedAt: "$appliedUsers.appliedAt",
                 status: "$appliedUsers.status",
 
@@ -563,7 +580,7 @@ export const getPromotionsSaved = async (query, loggedInUser) => {
 
     // Get account linked to user
     const account = await accountModel.findOne({ userId: loggedInUser._id });
-    logger.data("account",account)
+    logger.data("account", account)
     if (!account) throw new AppError(404, "Account Not Found");
 
     const pageNumber = parseInt(page);

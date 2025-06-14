@@ -73,6 +73,12 @@ class promotionController {
         return responser.send(200, `Successfully promotion Status Updated`, req, res, data);
     };
 
+    countLast24HoursPromotions = async (req, res) => {
+        const data = await promotionService.countLast24HoursPromotions();
+        logger.info(data);
+        return responser.send(200, `Successfully promotion counts fetched`, req, res, data);
+    };
+
     //-------------------------------------------------------------
     // USER CONTROLLER STARTED FROM HERE ONWORDS 
     //------------------------------------------------------------- 
