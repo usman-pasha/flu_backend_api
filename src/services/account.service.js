@@ -102,6 +102,7 @@ export const getAllAccounts = async (query) => {
         .sort()
         .paginate()
         .populate(populateQuery)
+        .limitFields(null, ['-__v'])
         .exec(accountModel);
     return record.data;
 };

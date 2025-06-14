@@ -1,26 +1,40 @@
 import jwt from "jsonwebtoken";
 import { userModel } from "../models/user.model.js";
+import { tokenModel } from "../models/token.model.js";
 import config from "../config/index.js";
 
 export const verifyAuth = async (req, res, next) => {
     try {
         const token = req.header("Authorization")?.replace("Bearer ", "");
-        if (!token)
-            if (!token) {
-                return res.status(401).json({
-                    status: false,
-                    message: "Authorization token is required"
-                });
-            }
+        if (!token) {
+            return res.status(401).json({
+                status: false,
+                message: "Authorization token is required"
+            });
+        }
         const decodedToken = jwt.verify(token, config.ACCESS_SECRET);
+
+        // Check if token is still active in DB
+        const tokenDoc = await tokenModel.findOne({
+            jwtToken: token,
+            status: 0 // active
+        });
+
+        if (!tokenDoc) {
+            return res.status(401).json({
+                message: "Session expired. Please login again.",
+                status: false,
+            });
+        }
+
         const user = await userModel.findOne(
             { _id: decodedToken?.id },
             { username: 1, _id: 1, accountType: 1 }
         );
         if (!user) {
             return res.status(401).json({
+                message: "Invalid token. User not found",
                 status: false,
-                message: "Invalid token. User not found"
             });
         }
         req.user = user;

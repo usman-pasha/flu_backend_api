@@ -15,5 +15,6 @@ authRoute.route("/updatePassword").post(verifyAuth, catchError(authController.up
 authRoute.route("/resetPassword").post(catchError(authController.resetPassword));
 authRoute.route("/resetPasswordOtp").post(catchError(authController.resendResetPasswordOTP));
 authRoute.route("/admin/login").post(catchError(authController.adminLogin));
+authRoute.route("/logout").post(verifyAuth, catchError(authController.logout));
 
 export default authRoute;

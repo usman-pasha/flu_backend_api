@@ -122,6 +122,7 @@ export const getAllPromotions = async (query) => {
         .sort()
         .paginate()
         .populate(populateQuery)
+        .limitFields(null, ['-__v -appliedUsers'])
         .exec(promotionModel);
     return record.data;
 };

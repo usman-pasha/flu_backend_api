@@ -80,6 +80,13 @@ class authController {
         console.log(data);
         return responser.send(200, `Successfully Admin Login`, req, res, data);
     };
+
+    logout = async (req, res) => {
+        const headers = req.headers;
+        const data = await authService.logout(headers);
+        console.log(data);
+        return responser.send(200, `Successfully Logged Out`, req, res, data);
+    };
 }
 
 export default new authController();

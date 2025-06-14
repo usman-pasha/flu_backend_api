@@ -4,11 +4,10 @@ import {
     compareHashPassword,
 } from "../middlewares/token.js";
 import AppError from "../core/appError.js"
-import { createLogin } from "./token.service.js"
+import { createLogin, tokenVerify, updateToken } from "./token.service.js"
 import { generateOTP } from "../utils/utils.js";
 import * as logger from "../utils/log.js";
 import { v4 as uuidv4 } from 'uuid';
-import * as tokenService from "./token.service.js";
 import * as emailService from "../utils/nodemailer.js";
 import * as accountService from "./account.service.js";
 
@@ -483,4 +482,24 @@ export const adminLogin = async (body) => {
     return {
         ...loginToken,
     };
+};
+
+export const logout = async (header) => {
+    const authHeader = header.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        throw new AppError(401, "Unauthorized: No token provided");
+    }
+    const token = authHeader.split(" ")[1];
+    // Decode token to get userId
+    const decoded = await tokenVerify(token);
+    const userId = decoded.id;
+
+    logger.info(`User ${userId} is logging out`);
+
+    // Mark token inactive only for this specific user and token
+    await updateToken(
+        { user: userId, jwtToken: token, status: 0 },
+        { status: 1 }
+    );
+    return `${userId} is logging out`
 };
