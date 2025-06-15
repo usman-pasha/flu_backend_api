@@ -30,7 +30,7 @@ promotionRoute
 
 // Allow promotion deletion (creator or admin)
 promotionRoute
-    .route("/deletePromotion/:promotionId ")
+    .route("/deletePromotion/:promotionId")
     .delete(verifyAuth,
         authorizePermissions("admin"),
         catchError(promotionController.deletePromotion));

@@ -15,7 +15,7 @@ const promotionSchema = new schema(
         deadline: { type: Date },
         platform: { type: String },
         location: { type: String },
-        verificationStatus: { type: String, enum: ["pending", "active", "deleted", "expired"], default: "pending" },
+        verificationStatus: { type: String, enum: ["pending", "active", "deleted", "inactive","expired"], default: "pending" },
         donts: [{ type: String }],
         script: { type: String },
         requirements: [{ type: String }],

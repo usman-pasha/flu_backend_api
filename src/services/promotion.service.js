@@ -154,7 +154,8 @@ export const updatePromotion = async (promotionId, body) => {
 export const deletePromotion = async (promotionId) => {
     logger.info("START:Delete Promotion");
     const promotion = await promotionModel.findByIdAndDelete({ _id: promotionId });
-    if (promotion.length <= 0) throw new AppError(404, "Promotion Not Found");
+    await accountModel.findOneAndUpdate({ savedPromotions: promotionId }, { $pull: { savedPromotions: promotionId } })
+    if (!promotion) throw new AppError(404, "Promotion Not Found");
     return true;
 };
 
