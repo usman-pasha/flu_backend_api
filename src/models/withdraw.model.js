@@ -1,6 +1,9 @@
 import mongoose from "mongoose";
+const schema = mongoose.Schema;
+import paginate from "mongoose-paginate-v2";
+import aggregatePaginate from "mongoose-aggregate-paginate-v2";
 
-export const withdrawSchema = new mongoose.Schema({
+const withdrawSchema = new schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
@@ -36,4 +39,7 @@ export const withdrawSchema = new mongoose.Schema({
     processedAt: Date
 }, { timestamps: true });
 
-export const withdrawRequest = mongoose.model("withdraw", withdrawSchema);
+withdrawSchema.plugin(paginate);
+withdrawSchema.plugin(aggregatePaginate);
+
+export const withdrawModel = mongoose.model("withdraw", withdrawSchema);

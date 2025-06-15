@@ -343,9 +343,9 @@ export const activePromotionStatus = async (promotionId, body) => {
         throw new AppError(400, "Promotion ID, and status are required.");
     }
 
-    const validStatuses = ["active"];
+    const validStatuses = ["active", "inactive"];
     if (!validStatuses.includes(body.status)) {
-        throw new AppError(400, "Status must be either 'active'.");
+        throw new AppError(400, "Status must be either 'active' or 'inactive");
     }
 
     // Check if user has applied to promotion

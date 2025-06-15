@@ -1,11 +1,14 @@
 import mongoose from "mongoose";
+const schema = mongoose.Schema;
+import paginate from "mongoose-paginate-v2";
+import aggregatePaginate from "mongoose-aggregate-paginate-v2";
 
 const upiRegex = /^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/;
 
-export const upiSchema = new mongoose.Schema({
+const upiSchema = new schema({
   userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
+    type: schema.Types.ObjectId,
+    ref: "user",
     required: true
   },
   upiId: {
@@ -17,8 +20,15 @@ export const upiSchema = new mongoose.Schema({
       message: props => `${props.value} is not a valid UPI ID`
     }
   },
-  payeeName: {
+  accountHolderName: {
     type: String,
     required: true
-  }
+  },
+  // TODO like atribute gpay or phonePay amazon pay etc 
 }, { timestamps: true });
+
+upiSchema.index({ upiId: true })
+upiSchema.plugin(paginate);
+upiSchema.plugin(aggregatePaginate);
+
+export const upiModel = mongoose.model("upi", upiSchema);

@@ -1,17 +1,21 @@
 import mongoose from "mongoose";
+const schema = mongoose.Schema;
+import paginate from "mongoose-paginate-v2";
+import aggregatePaginate from "mongoose-aggregate-paginate-v2";
 
 const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
 
-export const bankTransferSchema = new mongoose.Schema({
+const bankTransferSchema = new schema({
   userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User", // Assuming your user model is named "User"
+    type: schema.Types.ObjectId,
+    ref: "user", // Assuming your user model is named "User"
     required: true
   },
   accountNumber: {
     type: String,
     required: true
   },
+  cardName: { type: String, },
   ifscCode: {
     type: String,
     required: true,
@@ -21,8 +25,19 @@ export const bankTransferSchema = new mongoose.Schema({
       message: props => `${props.value} is not a valid IFSC code`
     }
   },
-  payeeName: {
+  accountHolderName: {
+    type: String,
+    required: true
+  },
+  bankName: {
     type: String,
     required: true
   }
 }, { timestamps: true }); // timestamps optional but helpful
+
+bankTransferSchema.index({ accountNumber: true })
+bankTransferSchema.index({ ifscCode: true })
+bankTransferSchema.plugin(paginate);
+bankTransferSchema.plugin(aggregatePaginate);
+
+export const bankTransferModel = mongoose.model("bankTransfer", bankTransferSchema);
