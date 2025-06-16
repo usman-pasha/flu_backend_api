@@ -6,9 +6,9 @@ import aggregatePaginate from "mongoose-aggregate-paginate-v2";
 const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
 
 const bankTransferSchema = new schema({
-  userId: {
+  accountId: {
     type: schema.Types.ObjectId,
-    ref: "user", // Assuming your user model is named "User"
+    ref: "account", // Assuming your user model is named "User"
     required: true
   },
   accountNumber: {

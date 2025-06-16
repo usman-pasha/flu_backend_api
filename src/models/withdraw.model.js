@@ -4,9 +4,9 @@ import paginate from "mongoose-paginate-v2";
 import aggregatePaginate from "mongoose-aggregate-paginate-v2";
 
 const withdrawSchema = new schema({
-    userId: {
+    accountId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
+        ref: "account",
         required: true
     },
     method: {

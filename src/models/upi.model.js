@@ -6,9 +6,9 @@ import aggregatePaginate from "mongoose-aggregate-paginate-v2";
 const upiRegex = /^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/;
 
 const upiSchema = new schema({
-  userId: {
+  accountId: {
     type: schema.Types.ObjectId,
-    ref: "user",
+    ref: "account", // Assuming your user model is named "User"
     required: true
   },
   upiId: {
@@ -20,11 +20,12 @@ const upiSchema = new schema({
       message: props => `${props.value} is not a valid UPI ID`
     }
   },
-  accountHolderName: {
+  upiHolderName: {
     type: String,
     required: true
   },
   // TODO like atribute gpay or phonePay amazon pay etc 
+  upiType: { type: String }
 }, { timestamps: true });
 
 upiSchema.index({ upiId: true })
