@@ -312,3 +312,14 @@ export const getAccountStatusCounts = async () => {
 
     return statusCounts;
 };
+
+// get my account profile by loggedIn 
+export const myAccountLoggedIn = async (loggedIn) => {
+    const condition = {
+        userId: loggedIn._id
+    }
+    const select = "-__v -savedPromotions";
+    const populateData = [{ path: "userId", select: ["_id", "email", "phoneNumber", "username"] }]
+    const account = await findOneRecord(condition, select, populateData);
+    return account;
+}

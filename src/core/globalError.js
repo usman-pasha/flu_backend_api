@@ -24,6 +24,12 @@ const handleValidationErrorDB = (err) => {
     return new AppError(400, "Invalid input data", message, true);
 };
 
+const mongoServerError = (err) => {
+    const errors = err.message
+    logger.error("ERROR", err.errorResponse.errmsg);
+    return new AppError(400, "Mongo Error", errors, true);
+};
+
 const handleJWTError = () => new AppError(401, "Invalid token. Please log in again!");
 
 const handleJWTExpiredError = () => new AppError(401, "Your token has expired! Please log in again.");
@@ -48,6 +54,7 @@ const errorHandler = (err, req, res, next) => {
     if (error.code === 11000) error = handleDuplicateFieldsDB(error);
     if (error.name === "ValidationError") error = handleValidationErrorDB(error);
     if (error.name === "JsonWebTokenError") error = handleJWTError();
+    if (error.name === "MongoServerError") error = mongoServerError(error);
     if (error.name === "TokenExpiredError") error = handleJWTExpiredError();
     sendError(error, req, res);
 };

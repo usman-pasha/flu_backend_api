@@ -63,6 +63,13 @@ class accountController {
         logger.info(data);
         return responser.send(200, `Successfully Fetched All Accounts Counts`, req, res, data);
     };
+
+    myAccountLoggedIn = async (req, res) => {
+        const loggedIn = req.user;
+        const data = await accountService.myAccountLoggedIn(loggedIn)
+        logger.info(data);
+        return responser.send(200, `Successfully Fetched My Account`, req, res, data);
+    };
 }
 
 export default new accountController();

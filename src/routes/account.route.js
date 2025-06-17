@@ -32,4 +32,8 @@ accountRoute
   .route("/account-counts")
   .get(catchError(accountController.getAccountStatusCounts));
 
+accountRoute
+  .route("/myaccount")
+  .get(verifyAuth, catchError(accountController.myAccountLoggedIn));
+
 export default accountRoute;

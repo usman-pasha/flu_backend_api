@@ -142,11 +142,59 @@ export const updatePromotion = async (promotionId, body) => {
     const condition = {
         _id: promotionId
     }
-    const payload = {
-        ...body,
+    const updatePayload = {
         updatedBy: body.userId
     }
-    const promotion = await updateRecord(condition, payload)
+    if (body.brandName) updatePayload.brandName = body.brandName;
+    if (body.brandLogo) {
+        if (body.brandLogo.startsWith("https://") || body.brandLogo.startsWith("http://")) {
+            updatePayload.brandLogo = body.brandLogo;
+        } else {
+            // If it's base64, upload it to Cloudinary
+            const singlePicture = await uploadOnCloudinary(body.brandLogo, "BrandLogo");
+            updatePayload.brandLogo = singlePicture?.secure_url;
+        }
+    };
+    if (body.brandNiche) updatePayload.brandNiche = body.brandNiche;
+    if (body.promotionPicture) {
+        if (body.promotionPicture.startsWith("https://") || body.promotionPicture.startsWith("http://")) {
+            updatePayload.promotionPicture = body.promotionPicture;
+        } else {
+            // If it's base64, upload it to Cloudinary
+            const singlePicture = await uploadOnCloudinary(body.promotionPicture, "Promotion");
+            updatePayload.promotionPicture = singlePicture?.secure_url;
+        }
+    };
+    if (body.promotionArrayPictures && Array.isArray(body.promotionArrayPictures)) {
+        const processedPictures = [];
+        for (const pictureObj of body.promotionArrayPictures) {
+            if (pictureObj?.img) {
+                const { img } = pictureObj;
+                if (img.startsWith("https://") || img.startsWith("http://")) {
+                    processedPictures.push({ img });
+                } else {
+                    const uploaded = await uploadOnCloudinary(img, "Promotion Array Pictures");
+                    if (uploaded?.secure_url) {
+                        processedPictures.push({ img: uploaded.secure_url });
+                    }
+                }
+            }
+        }
+        updatePayload.promotionArrayPictures = processedPictures;
+    }
+    if (body.description) updatePayload.description = body.description;
+    if (body.compensation) updatePayload.compensation = body.compensation;
+    if (body.deadline) updatePayload.deadline = body.deadline;
+    if (body.platform) updatePayload.platform = body.platform;
+    if (body.location) updatePayload.location = body.location;
+    if (body.donts) updatePayload.donts = body.donts;
+    if (body.script) updatePayload.script = body.script;
+    if (body.requirements) updatePayload.requirements = body.requirements;
+    if (body.dos) updatePayload.dos = body.dos;
+    if (body.engagementMetrics) updatePayload.engagementMetrics = body.engagementMetrics;
+    if (body.links) updatePayload.links = body.links;
+    if (body.termsOfCollaboration) updatePayload.termsOfCollaboration = body.termsOfCollaboration;
+    const promotion = await updateRecord(condition, updatePayload)
     if (promotion.length <= 0) throw new AppError(404, "Promotion Not Found");
     return promotion;
 };
