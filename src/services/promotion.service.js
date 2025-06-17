@@ -305,9 +305,16 @@ export const getAllAppliedUsersByStatus = async (query) => {
         throw new AppError(400, "Invalid status query parameter");
     }
 
-    const result = await promotionModel.aggregate([
-        { $unwind: "$appliedUsers" },
-        { ...(Object.keys(matchStage).length && { $match: matchStage }) }, // Conditionally add $match
+    // Build pipeline
+    const pipeline = [
+        { $unwind: "$appliedUsers" }
+    ];
+
+    if (Object.keys(matchStage).length > 0) {
+        pipeline.push({ $match: matchStage });
+    }
+
+    pipeline.push(
         {
             $lookup: {
                 from: "accounts",
@@ -341,14 +348,20 @@ export const getAllAppliedUsersByStatus = async (query) => {
         },
         { $skip: skip },
         { $limit: pageSize }
-    ]);
+    );
 
-    const total = await promotionModel.aggregate([
-        { $unwind: "$appliedUsers" },
-        { ...(Object.keys(matchStage).length && { $match: matchStage }) },
-        { $count: "total" }
-    ]);
+    const result = await promotionModel.aggregate(pipeline);
 
+    // Total count
+    const countPipeline = [
+        { $unwind: "$appliedUsers" }
+    ];
+    if (Object.keys(matchStage).length > 0) {
+        countPipeline.push({ $match: matchStage });
+    }
+    countPipeline.push({ $count: "total" });
+
+    const total = await promotionModel.aggregate(countPipeline);
     const totalCount = total[0]?.total || 0;
     const totalPages = Math.ceil(totalCount / pageSize);
 
@@ -360,6 +373,7 @@ export const getAllAppliedUsersByStatus = async (query) => {
         totalPages
     };
 };
+
 
 
 // admin counts 
