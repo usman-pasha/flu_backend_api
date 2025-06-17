@@ -259,6 +259,7 @@ export const getAllAppliedUsersByStatus = async (query) => {
                 fullName: {
                     $concat: ["$userDetails.firstName", " ", "$userDetails.lastName"]
                 },
+                accountId: "$userDetails._id",
                 profilePicture: "$userDetails.profilePicture",
                 location: "$userDetails.location",
                 appliedAt: "$appliedUsers.appliedAt"
