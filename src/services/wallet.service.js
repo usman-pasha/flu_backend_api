@@ -43,7 +43,13 @@ export const getMyWallet = async (loggedIn) => {
     const condition = {
         accountId: account?._id
     }
-    const populateQuery = [{ path: "promotionIds", select: ["_id", "compensation", "location", "brandLogo", "brandNiche", "brandName"] }];
+    const populateQuery = [
+        {
+            path: "promotionIds",
+            select: ["_id", "compensation", "location", "brandLogo", "brandNiche", "brandName"],
+            options: { sort: { compensation: -1 } } // sort descending by compensation
+        }
+    ];
     const wallet = await findOneRecord(condition, "-__v", populateQuery);
     if (!wallet) throw new AppError(404, "Wallet Not Found")
     return wallet;
@@ -54,7 +60,8 @@ export const getAllWalletsByAdmin = async (query) => {
     const populateQuery = [
         {
             path: "promotionIds",
-            select: ["_id", "compensation", "location", "brandLogo", "brandNiche"]
+            select: ["_id", "compensation", "location", "brandLogo", "brandNiche", "brandName"],
+            options: { sort: { compensation: -1 } } // sort descending by compensation
         }
     ];
     // Fetch all wallets
