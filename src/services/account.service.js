@@ -3,7 +3,13 @@ import * as logger from "../utils/log.js";
 import AppError from "../core/appError.js"
 import * as userService from "./user.service.js";
 import APIFeatures from "../core/apiFeature.js";
+import * as walletService from "./wallet.service.js";
 import { uploadArrayImage, uploadOnCloudinary } from "../core/cloudImage.js";
+import mongoose from "mongoose";
+
+// Generate a new Mongo ObjectId
+// const newId = new mongoose.Types.ObjectId();
+const newId = new mongoose.mongo.ObjectId();
 
 export const createrecord = async (object) => {
     const record = await accountModel.create(object);
@@ -61,6 +67,7 @@ export const createAccount = async (body, loggedInUser) => {
         facebookSubscriberCount: body.facebookSubscriberCount,
         instaFollowerCount: body.instaFollowerCount,
         youtubeSubscriberCount: body.youtubeSubscriberCount,
+        walletId: newId
     };
 
     // Optional fields
@@ -83,7 +90,9 @@ export const createAccount = async (body, loggedInUser) => {
         { path: "createdBy", select: ["_id", "username", "accountType"] },
         { path: "updatedBy", select: ["_id", "username", "accountType"] }
     ];
-    const account = await findOneRecord({ _id: record._id }, "", populateQuery)
+    const account = await findOneRecord({ _id: record._id }, "", populateQuery);
+    // TODO Create the wallet of the user
+    await walletService.createWallet(account?._id, newId);
     return account;
 
 };

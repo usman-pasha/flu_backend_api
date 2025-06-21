@@ -759,8 +759,18 @@ export const profileAndPromotion = async (body) => {
         .select("-createdAt -savedPromotions -updatedAt -__v -createdBy -updatedBy")
         .lean();
     if (!account) throw new AppError(404, "Account Not Found");
-    const promotion = await findOneRecord({ _id: body.promotionId },"-appliedUsers -__v -updatedAt -createdAt -updatedBy -createdBy");
+    const promotion = await promotionModel.findOne({ _id: body.promotionId })
+        .select(" -__v -updatedAt -createdAt -updatedBy -createdBy")
+        .lean();
     if (!promotion) throw new AppError(404, "Promotion Not Found");
+
+    // ✅ Find a single appliedUser
+    const appliedUser = (promotion.appliedUsers || []).find(
+        (user) => user.accountId.toString() === body.accountId.toString()
+    );
+    delete promotion.appliedUsers;
+    promotion.appliedUser = appliedUser || null;
+
     const record = {
         account,
         promotion

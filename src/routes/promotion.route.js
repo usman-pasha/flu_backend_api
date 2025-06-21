@@ -60,6 +60,7 @@ promotionRoute
 //-------------------------------------------------------------
 // USER CONTROLLER STARTED FROM HERE ONWORDS 
 //------------------------------------------------------------- 
+
 // 1. Get Active Promotion
 promotionRoute
     .route("/active")

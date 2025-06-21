@@ -28,6 +28,7 @@ const accountSchema = new schema(
         profileCompleted: { type: Boolean, default: false },
         userId: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true },
         savedPromotions: [{ type: mongoose.Schema.Types.ObjectId, ref: "promotion" }],
+        walletId: { type: schema.Types.ObjectId, ref: "wallet",},
         createdBy: { type: schema.Types.ObjectId, ref: "user" },
         updatedBy: { type: schema.Types.ObjectId, ref: "user" },
     },
@@ -35,6 +36,7 @@ const accountSchema = new schema(
 );
 
 accountSchema.index({ userId: 1 }, { unique: true });
+accountSchema.index({ walletId: 1 }, { unique: true });
 accountSchema.plugin(paginate);
 accountSchema.plugin(aggregatePaginate);
 
