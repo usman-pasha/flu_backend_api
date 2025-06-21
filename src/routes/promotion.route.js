@@ -95,4 +95,9 @@ promotionRoute
     .get(verifyAuth,
         catchError(promotionController.getPromotionsSaved));
 
+promotionRoute
+    .route("/profilePromotion")
+    .post(
+        catchError(promotionController.profileAndPromotion));
+
 export default promotionRoute;

@@ -129,6 +129,15 @@ class promotionController {
         logger.info(data);
         return responser.send(200, `Successfully Fetched Saved Promotion`, req, res, data);
     };
+
+    profileAndPromotion = async (req, res) => {
+        const reqData = req.body;
+        const data = await promotionService.profileAndPromotion(reqData);
+        logger.info(data);
+        return responser.send(200, `Successfully Fetched Promotion And Profile`, req, res, data);
+    };
+
+
 }
 
 export default new promotionController();

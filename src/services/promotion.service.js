@@ -753,6 +753,17 @@ export const getPromotionsSaved = async (query, loggedInUser) => {
     };
 };
 
-
-// 9. get my account
-// 10. update my account 
+// get profile and promotion && get by promotionId
+export const profileAndPromotion = async (body) => {
+    const account = await accountModel.findOne({ _id: body.accountId })
+        .select("-createdAt -savedPromotions -updatedAt -__v -createdBy -updatedBy")
+        .lean();
+    if (!account) throw new AppError(404, "Account Not Found");
+    const promotion = await findOneRecord({ _id: body.promotionId },"-appliedUsers -__v -updatedAt -createdAt -updatedBy -createdBy");
+    if (!promotion) throw new AppError(404, "Promotion Not Found");
+    const record = {
+        account,
+        promotion
+    }
+    return record;
+}

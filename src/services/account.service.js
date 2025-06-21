@@ -205,24 +205,36 @@ export const getAllAccountsByStatus = async (query) => {
     const validStatuses = ["pending", "approved", "rejected", "today"];
     const inputStatus = (status || "").trim().toLowerCase();
 
-    if (!validStatuses.includes(inputStatus)) {
-        throw new AppError(400, "Invalid status query parameter");
-    }
-
     const pageNumber = parseInt(page);
     const pageSize = parseInt(limit);
     const skip = (pageNumber - 1) * pageSize;
 
+    // Prepare match stage condition
     const matchStage = {};
-    if (inputStatus === "today") {
-        const date24HoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-        matchStage["createdAt"] = { $gte: date24HoursAgo };
-    } else {
-        matchStage["accountStatus"] = inputStatus;
+
+    // Only add status filter if it's provided
+    if (inputStatus) {
+        if (!validStatuses.includes(inputStatus)) {
+            throw new AppError(400, "Invalid status query parameter");
+        }
+
+        if (inputStatus === "today") {
+            const date24HoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+            matchStage.createdAt = { $gte: date24HoursAgo };
+        } else {
+            matchStage.accountStatus = inputStatus;
+        }
     }
 
-    const aggregationPipeline = [
-        { $match: matchStage },
+    // Build aggregation pipeline
+    const aggregationPipeline = [];
+
+    // Only add $match if matchStage contains any keys
+    if (Object.keys(matchStage).length > 0) {
+        aggregationPipeline.push({ $match: matchStage });
+    }
+
+    aggregationPipeline.push(
         {
             $project: {
                 _id: 1,
@@ -240,21 +252,24 @@ export const getAllAccountsByStatus = async (query) => {
         { $sort: { createdAt: -1 } },
         { $skip: skip },
         { $limit: pageSize }
-    ];
+    );
 
+    // Fetch data
     const result = await accountModel.aggregate(aggregationPipeline);
 
-    const totalCountAgg = await accountModel.aggregate([
-        { $match: matchStage },
-        { $count: "total" }
-    ]);
+    // Total count pipeline
+    const countPipeline = [];
+    if (Object.keys(matchStage).length > 0) {
+        countPipeline.push({ $match: matchStage });
+    }
+    countPipeline.push({ $count: "total" });
 
+    const totalCountAgg = await accountModel.aggregate(countPipeline);
     const total = totalCountAgg[0]?.total || 0;
+
     const totalPages = Math.ceil(total / pageSize);
     const hasNextPage = pageNumber < totalPages;
     const hasPrevPage = pageNumber > 1;
-    const nextPage = hasNextPage ? pageNumber + 1 : null;
-    const prevPage = hasPrevPage ? pageNumber - 1 : null;
 
     return {
         docs: result,
@@ -264,10 +279,11 @@ export const getAllAccountsByStatus = async (query) => {
         totalPages,
         hasNextPage,
         hasPrevPage,
-        nextPage,
-        prevPage
+        nextPage: hasNextPage ? pageNumber + 1 : null,
+        prevPage: hasPrevPage ? pageNumber - 1 : null
     };
 };
+
 
 // counts 
 export const getAccountStatusCounts = async () => {
