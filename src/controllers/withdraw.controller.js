@@ -25,6 +25,21 @@ class WithdrawController {
     };
 
     // ADMIN: Get All Withdraws
+    getAllAdminWithdrawals = async (req, res) => {
+        const result = await withdrawService.getAllAdminWithdrawals(req.query);
+        return responser.send(200, "All Withdraws Fetched By Admin", req, res, result);
+    };
+
+    getWithdrawStatusCounts = async (req, res) => {
+        const result = await withdrawService.getWithdrawStatusCounts(req.query);
+        return responser.send(200, "All Withdraws Counts Fetched By Admin", req, res, result);
+    };
+    
+    updateWithdrawalStatus = async (req, res) => {
+        const result = await withdrawService.updateWithdrawalStatus(req.params.id, req.body.status);
+        return responser.send(200, "Withdrawal status updated successfully", req, res, result);
+    };
+
     // getAllWithdrawsAdmin = async (req, res) => {
     //     const result = await withdrawService.getAllWithdrawsAdmin(req.query.status);
     //     return responser.send(200, "All Withdraws Fetched", req, res, result);

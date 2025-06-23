@@ -374,8 +374,6 @@ export const getAllAppliedUsersByStatus = async (query) => {
     };
 };
 
-
-
 // admin counts 
 export const getAppliedUsersStatusCounts = async () => {
     const now = new Date();
