@@ -43,11 +43,19 @@ export const getMyWallet = async (loggedIn) => {
     const condition = {
         accountId: account?._id
     }
-    const populateQuery = [
+        const populateQuery = [
         {
             path: "promotionIds",
             select: ["_id", "compensation", "location", "brandLogo", "brandNiche", "brandName"],
-            options: { sort: { compensation: -1 } } // sort descending by compensation
+            options: { sort: { compensation: -1 } }
+        },
+        {
+            path: "accountId",
+            select: ["_id", "firstName", "lastName", "profilePicture", "userId"],
+            populate: {
+                path: "userId",
+                select: ["_id", "username", "email", "phoneNumber"] // adjust fields as needed
+            }
         }
     ];
     const wallet = await findOneRecord(condition, "-__v", populateQuery);
@@ -61,9 +69,18 @@ export const getAllWalletsByAdmin = async (query) => {
         {
             path: "promotionIds",
             select: ["_id", "compensation", "location", "brandLogo", "brandNiche", "brandName"],
-            options: { sort: { compensation: -1 } } // sort descending by compensation
+            options: { sort: { compensation: -1 } }
+        },
+        {
+            path: "accountId",
+            select: ["_id", "firstName", "lastName", "profilePicture", "userId"],
+            populate: {
+                path: "userId",
+                select: ["_id", "username", "email", "phoneNumber"] // adjust fields as needed
+            }
         }
     ];
+
     // Fetch all wallets
     const wallets = await walletModel.find({}, "-__v").populate(populateQuery);
     if (!wallets || wallets.length === 0) {
