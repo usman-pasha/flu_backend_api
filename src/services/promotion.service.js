@@ -208,82 +208,6 @@ export const deletePromotion = async (promotionId) => {
 };
 
 // admin filter
-// export const getAllAppliedUsersByStatus = async (query) => {
-//     const { status, page = 1, limit = 10 } = query;
-
-//     const validStatuses = ["under review", "approved", "rejected", "today"];
-//     const inputStatus = (status || "").trim().toLowerCase();
-
-//     if (!validStatuses.includes(inputStatus)) {
-//         throw new AppError(400, "Invalid status query parameter");
-//     }
-
-//     const pageNumber = parseInt(page);
-//     const pageSize = parseInt(limit);
-//     const skip = (pageNumber - 1) * pageSize;
-
-//     // Prepare match condition
-//     const matchStage = {};
-//     if (inputStatus === "today") {
-//         const date24HoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-//         matchStage["appliedUsers.appliedAt"] = { $gte: date24HoursAgo };
-//     } else {
-//         matchStage["appliedUsers.status"] = inputStatus;
-//     }
-
-//     const result = await promotionModel.aggregate([
-//         { $unwind: "$appliedUsers" },
-//         { $match: matchStage },
-//         {
-//             $lookup: {
-//                 from: "accounts",
-//                 localField: "appliedUsers.accountId",
-//                 foreignField: "_id",
-//                 as: "userDetails"
-//             }
-//         },
-//         { $unwind: "$userDetails" },
-//         {
-//             $project: {
-//                 _id: 0,
-//                 promotionId: "$_id",
-//                 brandName: 1,
-//                 brandNiche: 1,
-//                 brandLogo: 1,
-//                 promotionPicture: 1,
-//                 platform: 1,
-//                 deadline: 1,
-//                 compensation: 1,
-//                 status: "$appliedUsers.status",
-//                 rejectedReason: "$appliedUsers.rejectedReason",
-//                 fullName: {
-//                     $concat: ["$userDetails.firstName", " ", "$userDetails.lastName"]
-//                 },
-//                 accountId: "$userDetails._id",
-//                 profilePicture: "$userDetails.profilePicture",
-//                 location: "$userDetails.location",
-//                 appliedAt: "$appliedUsers.appliedAt"
-//             }
-//         },
-//         { $skip: skip },
-//         { $limit: pageSize }
-//     ]);
-
-//     const total = await promotionModel.aggregate([
-//         { $unwind: "$appliedUsers" },
-//         { $match: matchStage },
-//         { $count: "total" }
-//     ]);
-//     const totalPages = Math.ceil(total / pageSize);
-//     return {
-//         docs: result,
-//         total: total[0]?.total || 0,
-//         page: pageNumber,
-//         limit: pageSize,
-//         totalPages
-//     };
-// };
-
 export const getAllAppliedUsersByStatus = async (query) => {
     const { status, page = 1, limit = 10 } = query;
 
@@ -516,7 +440,6 @@ export const countLast24HoursPromotions = async () => {
 
     return { totalPromotionsCounts: count };
 };
-
 
 // ----------------------------------------------------------------
 // USER Promotions

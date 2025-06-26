@@ -68,7 +68,7 @@ export const getOneTransactionByAdmin = async (transactionId) => {
     const populateData = [
         { path: "accountId", select: ["_id", "firstName", "lastName", "userId"] },
         { path: "walletId", select: ["_id", "balance"] },
-        { path: "widthdrawId", select: ["_id", "processedAt", "requestedAt", "status", "amount", "method"] }
+        { path: "withdrawId", select: ["_id", "processedAt", "requestedAt", "status", "amount", "method"] }
     ];
     const transaction = await transactionModel.findOne({ _id: transactionId })
         .populate(populateData)
@@ -83,7 +83,7 @@ export const getAllTransactionsByAdmin = async (query) => {
     const populateData = [
         { path: "accountId", select: ["_id", "firstName", "lastName", "userId"] },
         { path: "walletId", select: ["_id", "balance"] },
-        { path: "widthdrawId", select: ["_id", "processedAt", "requestedAt", "status", "amount", "method"] }
+        { path: "withdrawId", select: ["_id", "processedAt", "requestedAt", "status", "amount", "method"] }
     ];
 
     const record = await new APIFeatures(query)
@@ -106,7 +106,7 @@ export const getMyTransactions = async (loggedIn) => {
     const populateData = [
         { path: "accountId", select: ["_id", "firstName", "lastName", "userId"] },
         { path: "walletId", select: ["_id", "balance"] },
-        { path: "widthdrawId", select: ["_id", "processedAt", "requestedAt", "status", "amount", "method"] }
+        { path: "withdrawId", select: ["_id", "processedAt", "requestedAt", "status", "amount", "method"] }
     ];
     const transactions = await transactionModel
         .find({ accountId: account._id })  // assuming accountId matches loggedIn._id
