@@ -13,8 +13,6 @@ app.use(express.urlencoded({ limit: "20mb", extended: true }));
 const whiteList = ["http://localhost:4200", "http://localhost:8080", "http://localhost:5173","http://localhost:51629"];
 const corsOptions = {
   origin: (origin, cb) => {
-    console.log("origin",origin);
-    
     if (!origin || whiteList.includes(origin)) {
       cb(null, true);
     } else {

@@ -10,6 +10,7 @@ import * as logger from "../utils/log.js";
 import { v4 as uuidv4 } from 'uuid';
 import * as emailService from "../utils/nodemailer.js";
 import * as accountService from "./account.service.js";
+import { smsOTPV2 } from "../utils/sms.js";
 
 // 1.Register User
 export const registerUser = async (body) => {
@@ -52,6 +53,9 @@ export const registerUser = async (body) => {
     emailService.sendVerificationEmail(emailPayload)
         .then((res) => logger.data("Email Response..", res.response))
         .catch((err) => logger.error("sendEmailToUser", err));
+
+    // Phone OTP
+    // await smsOTPV2(createUser);
     const record = await userService.findOneRecord(
         { _id: createUser?._id },
         "-password -__v -createdAt -updatedAt -phoneOtpExpiry -emailOtpExpiry -emailOTP"
@@ -114,7 +118,6 @@ export const validateOTP = async (body) => {
 
     return `OTP validation successful for ${isPhone ? user.phoneNumber : user.email}!`;
 };
-
 
 // 3.Function to resend OTP
 export const resendOTP = async (body) => {
@@ -198,9 +201,9 @@ export const loginWithPhoneOtp = async (body) => {
     if (!user) throw new AppError(400, "User not found with the provided Phone Number.");
 
     // Check if the phone number is verified
-    if (user.phoneIsVerified !== true) {
-        throw new AppError(400, "Phone Number is not verified. Please verify your Number first.");
-    }
+    // if (user.phoneIsVerified !== true) {
+    //     throw new AppError(400, "Phone Number is not verified. Please verify your Number first.");
+    // }
     if (user.status === "deleted") {
         throw new AppError(400, "User Account is deleted. Contact Admin.");
     }
@@ -214,9 +217,27 @@ export const loginWithPhoneOtp = async (body) => {
         throw new AppError(400, "Invalid OTP. Try again.");
     }
 
-    await userService.updateRecord({ _id: user._id }, {
-        $unset: { loginWithOtp: "", loginWithOtpExpiry: "" }
-    });
+    const updateData = {
+        $unset: {
+            loginWithOtp: "",
+            loginWithOtpExpiry: "",
+        },
+    };
+
+    // If phone is not verified, mark it verified and remove phoneOTP fields
+    if (!user.phoneIsVerified) {
+        updateData.$set = {
+            phoneIsVerified: true,
+            status: "active",
+        };
+        updateData.$unset.phoneOTP = "";
+        updateData.$unset.phoneOtpExpiry = "";
+    }
+    await userService.updateRecord({ _id: user._id }, updateData);
+
+    // await userService.updateRecord({ _id: user._id }, {
+    //     $unset: { loginWithOtp: "", loginWithOtpExpiry: "" }
+    // });
 
     const loginToken = await createLogin(user);
     const account = await accountService.findOneRecord({ userId: user._id });
