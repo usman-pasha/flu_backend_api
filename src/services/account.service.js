@@ -8,8 +8,8 @@ import { uploadArrayImage, uploadOnCloudinary } from "../core/cloudImage.js";
 import mongoose from "mongoose";
 
 // Generate a new Mongo ObjectId
-// const newId = new mongoose.Types.ObjectId();
-const newId = new mongoose.mongo.ObjectId();
+const newId = new mongoose.Types.ObjectId();
+// const newId = new mongoose.mongo.ObjectId();
 
 export const createrecord = async (object) => {
     const record = await accountModel.create(object);
@@ -47,6 +47,10 @@ export const createAccount = async (body, loggedInUser) => {
         if (!body[field]) {
             throw new AppError(400, `${field} is required`);
         }
+    }
+    const accountExists = await findOneRecord({ userId: loggedInUser?._id });
+    if (accountExists) {
+        throw new AppError(409, "Already Account Exists.You Can't Create Account")
     }
 
     // Prepare payload
