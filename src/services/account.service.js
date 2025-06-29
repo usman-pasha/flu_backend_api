@@ -297,7 +297,6 @@ export const getAllAccountsByStatus = async (query) => {
     };
 };
 
-
 // counts 
 export const getAccountStatusCounts = async () => {
     const now = new Date();
