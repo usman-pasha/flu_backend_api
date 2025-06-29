@@ -37,11 +37,11 @@ promotionRoute
 
 promotionRoute
     .route("/applied-users")
-    .get(catchError(promotionController.getAllAppliedUsersByStatus));
+    .get(verifyAuth, catchError(promotionController.getAllAppliedUsersByStatus));
 
 promotionRoute
     .route("/applied-counts")
-    .get(catchError(promotionController.getAppliedUsersStatusCounts));
+    .get(verifyAuth, catchError(promotionController.getAppliedUsersStatusCounts));
 
 promotionRoute
     .route("/update-status/:promotionId")
@@ -55,7 +55,7 @@ promotionRoute
 
 promotionRoute
     .route("/promotionCountLast")
-    .get(catchError(promotionController.countLast24HoursPromotions));
+    .get(verifyAuth, catchError(promotionController.countLast24HoursPromotions));
 
 //-------------------------------------------------------------
 // USER CONTROLLER STARTED FROM HERE ONWORDS 
@@ -98,7 +98,7 @@ promotionRoute
 
 promotionRoute
     .route("/profilePromotion")
-    .post(
+    .post(verifyAuth,
         catchError(promotionController.profileAndPromotion));
 
 export default promotionRoute;

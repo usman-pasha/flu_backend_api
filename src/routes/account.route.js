@@ -27,10 +27,10 @@ accountRoute
   .patch(verifyAuth, authorizePermissions("admin"), catchError(accountController.republishAccount));
 accountRoute
   .route("/accountStatus")
-  .get(catchError(accountController.getAllAccountsByStatus));
+  .get(verifyAuth,catchError(accountController.getAllAccountsByStatus));
 accountRoute
   .route("/account-counts")
-  .get(catchError(accountController.getAccountStatusCounts));
+  .get(verifyAuth,catchError(accountController.getAccountStatusCounts));
 
 accountRoute
   .route("/myaccount")
