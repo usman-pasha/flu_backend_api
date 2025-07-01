@@ -15,7 +15,7 @@ const whiteList = [
   "http://localhost:8080",
   "http://localhost:5173",
   "http://localhost:51629",
-  "https://68618609511d554d7e51424b--animated-churros-edd77b.netlify.app"
+  "https://flu-management.netlify.app"
 ];
 const corsOptions = {
   origin: (origin, cb) => {
