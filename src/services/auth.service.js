@@ -55,7 +55,7 @@ export const registerUser = async (body) => {
         .catch((err) => logger.error("sendEmailToUser", err));
 
     // Phone OTP
-    // await smsOTPV2(createUser);
+    await smsOTPV2(createUser.phoneOTP, createUser.phoneNumber);
     const record = await userService.findOneRecord(
         { _id: createUser?._id },
         "-password -__v -createdAt -updatedAt -phoneOtpExpiry -emailOtpExpiry -emailOTP"
@@ -156,6 +156,7 @@ export const resendOTP = async (body) => {
     // Send OTP via phone or email
     if (body.type === 'phone') {
         // TODO: Enable SMS sending when service is ready
+        await smsOTPV2(newOtp, user.phoneNumber);
         // await sendSms(user.phoneNumber, `Your verification code is: ${newOtp}`);
         logger.info(`SMS OTP sent to ${user.phoneNumber}: ${newOtp}`);
     } else if (body.type === 'email') {
@@ -187,7 +188,7 @@ export const refreshLoginOtp = async (body) => {
     const record = await userService.updateRecord(
         { _id: user._id }, updateFields
     );
-    // await sms.smsOTPV2(record);
+    await smsOTPV2(record.loginWithOtp, record.phoneNumber);
     logger.info(record);
     return `Successfully sent new Login OTP to ${user.phoneNumber} | OTP is ${record.loginWithOtp}!`;
 };

@@ -37,7 +37,7 @@ export const createNewUpi = async (data) => {
     if (!account) throw new AppError("404", "Account Not Found");
 
     const existing = await findOneRecord({
-        account: account._id,
+        accountId: account._id,
         upiId: data.upiId
     });
     if (existing) {

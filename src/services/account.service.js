@@ -150,16 +150,16 @@ export const updateAccount = async (accountId, body) => {
     if (body.facebookSubscriberCount) updatePayload.facebookSubscriberCount = body.facebookSubscriberCount;
     if (body.instaFollowerCount) updatePayload.instaFollowerCount = body.instaFollowerCount;
     if (body.youtubeSubscriberCount) updatePayload.youtubeSubscriberCount = body.youtubeSubscriberCount;
-    if (body.firstName) payloadData.firstName = body.firstName;
-    if (body.lastName) payloadData.lastName = body.lastName;
+    if (body.firstName) updatePayload.firstName = body.firstName;
+    if (body.lastName) updatePayload.lastName = body.lastName;
     if (body.profilePicture) {
         // If it's already a URL, just assign it
         if (body.profilePicture.startsWith("https://") || body.profilePicture.startsWith("http://")) {
-            payloadData.profilePicture = body.profilePicture;
+            updatePayload.profilePicture = body.profilePicture;
         } else {
             // If it's base64, upload it to Cloudinary
             const singlePicture = await uploadOnCloudinary(body.profilePicture, "Profile");
-            payloadData.profilePicture = singlePicture?.secure_url;
+            updatePayload.profilePicture = singlePicture?.secure_url;
         }
     }
 

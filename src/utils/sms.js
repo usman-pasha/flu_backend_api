@@ -3,12 +3,12 @@ import config from '../config/index.js';
 import * as logger from '../utils/log.js';
 import axios from "axios";
 
-export const smsOTPV2 = async (payload) => {
+export const smsOTPV2 = async (otp, phoneNumber) => {
     try {
         const data = {
-            variables_values: payload.phoneOTP,
+            variables_values: otp,
             route: "otp",
-            numbers: payload.phoneNumber,
+            numbers: phoneNumber,
         };
         const configData = {
             method: "post",
