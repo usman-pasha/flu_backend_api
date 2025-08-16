@@ -5,6 +5,11 @@ import cors from "cors";
 // Custom Imports
 import routes from "./routes/index.js";
 import globalErrorHandler from "./core/globalError.js";
+import * as responser from "./core/responser.js";
+import catchAsync from "./core/catachError.js";
+import * as logger from "./utils/log.js";
+import { sendPushNotification } from "./utils/firebase/sendPushNotification.js";
+
 
 const app = express();
 app.use(express.json({ limit: "20mb" }));
@@ -30,29 +35,6 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Routing
-routes(app, "/api/v1");
-
-import * as responser from "./core/responser.js";
-import catchAsync from "./core/catachError.js";
-import * as logger from "./utils/log.js";
-import * as emailService from "./utils/nodemailer.js";
-
-const formSubmitApi = async (req, res) => {
-  const reqData = req.body;
-  const data = {
-    email: reqData.email,
-    message: reqData.message,
-    name: reqData.name,
-  }
-  logger.info(data);
-  emailService.pcwtEmail(data)
-    .then((res) => logger.data("Email Response..", res.response))
-    .catch((err) => logger.error("sendEmailToUser", err));
-  return responser.send(200, "Successfully Form Submitted", req, res, data);
-}
-
-app.post("/api/v1/formSubmit", catchAsync(formSubmitApi))
-
 const api = async (req, res) => {
   const data = {
     name: 'Usman Pasha.A',
@@ -63,10 +45,23 @@ const api = async (req, res) => {
   return responser.send(200, "Successfully Health CheckUp Fetched ", req, res, data);
 }
 
-app.post("/api/v1/formSubmit", catchAsync(formSubmitApi))
+const testNotification = async (req, res) => {
+  const { token, title, body } = req.body;
+
+  try {
+    const _d = {
+      "_id": "68a03b3000995bc2ad7f9678",
+    }
+    const response = await sendPushNotification(token, title, body, _d);
+    res.status(200).json({ success: true, response });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+app.post("/send-notification", testNotification);
 app.get("/api/v1/check", catchAsync(api))
-
-
+routes(app, "/api/v1");
 
 app.use(globalErrorHandler);
 

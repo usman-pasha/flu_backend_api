@@ -6,6 +6,10 @@ import AppError from "../core/appError.js";
 import APIFeatures from "../core/apiFeature.js";
 import { uploadOnCloudinary } from "../core/cloudImage.js";
 import * as accountService from "./account.service.js"
+import { sendPushNotificationToMultiple } from "../utils/firebase/sendPushNotification.js";
+import { getUserFcmTokens } from "./auth.service.js";
+import { accountModel } from "../models/account.model.js";
+
 
 export const createTransaction = async (data) => {
     logger.info("Creating Transaction")
@@ -61,6 +65,18 @@ export const createTransaction = async (data) => {
     };
     // Save transaction
     const createdTransaction = await transactionModel.create(payload);
+    const user = await accountModel.findOne({ _id: data.accountId })
+    const tokens = await getUserFcmTokens(user.userId);
+
+    const title = "Withdrawal Processed";
+    const message = `Your withdrawal request of ₹${amount} has been processed successfully. Transaction ID: ${data.transId}.`;
+
+    const _data = {
+        type: "transaction",
+        userId: user.userId,
+        image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRwkdVdtBJtmPVruudk35t0O_jiDmiPYh_M1A&s"
+    }
+    await sendPushNotificationToMultiple(tokens, title, message, _data);
     return createdTransaction;
 };
 

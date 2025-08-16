@@ -16,5 +16,7 @@ authRoute.route("/resetPassword").post(catchError(authController.resetPassword))
 authRoute.route("/resetPasswordOtp").post(catchError(authController.resendResetPasswordOTP));
 authRoute.route("/admin/login").post(catchError(authController.adminLogin));
 authRoute.route("/logout").post(verifyAuth, catchError(authController.logout));
+authRoute.route("/storeFcmToken").post(catchError(authController.storeFcmToken));
+authRoute.route("/getMyNotifications").get(verifyAuth, catchError(authController.getMyNotifications));
 
 export default authRoute;

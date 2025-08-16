@@ -87,6 +87,19 @@ class authController {
         console.log(data);
         return responser.send(200, `Successfully Logged Out`, req, res, data);
     };
+
+    storeFcmToken = async (req, res) => {
+        const reqData = req.body;
+        const data = await authService.storeFcmToken(reqData);
+        console.log(data);
+        return responser.send(200, `Successfully Stored FcmToken`, req, res, data);
+    };
+
+    // Get all wallets (Admin)
+    getMyNotifications = async (req, res) => {
+        const result = await authService.getMyNotifications(req.user);
+        return responser.send(200, "Successfully Notification Fetched", req, res, result);
+    };
 }
 
 export default new authController();

@@ -6,6 +6,8 @@ import APIFeatures from "../core/apiFeature.js";
 import * as walletService from "./wallet.service.js";
 import { uploadArrayImage, uploadOnCloudinary } from "../core/cloudImage.js";
 import mongoose from "mongoose";
+import { sendPushNotificationToMultiple } from "../utils/firebase/sendPushNotification.js";
+import { getUserFcmTokens } from "./auth.service.js";
 
 // Generate a new Mongo ObjectId
 const newId = new mongoose.Types.ObjectId();
@@ -187,7 +189,7 @@ export const republishAccount = async (accountId, body) => {
     const updatePayload = {
         updatedBy: body.userId
     };
-
+    let notificationMessage = "";
     switch (body.accountStatus) {
         case ACCOUNT_STATUS.REJECTED:
             if (!body.reasonForRejection) {
@@ -195,10 +197,12 @@ export const republishAccount = async (accountId, body) => {
             }
             updatePayload.reasonForRejection = body.reasonForRejection;
             updatePayload.accountStatus = body.accountStatus;
+            notificationMessage = `Your account was rejected. Reason: ${body.reasonForRejection}`;
             break;
 
         case ACCOUNT_STATUS.APPROVED:
             updatePayload.accountStatus = body.accountStatus;
+            notificationMessage = "🎉 Your account has been approved!";
             break;
 
         default:
@@ -207,7 +211,13 @@ export const republishAccount = async (accountId, body) => {
 
     const record = await updateRecord({ _id: accountId }, updatePayload);
     if (!record) throw new AppError(404, "Account not found in collection");
-
+    const tokens = await getUserFcmTokens(record.userId);
+    const _data = {
+        userId: record.userId,
+        type: "account",
+        image: record.profilePicture
+    }
+    await sendPushNotificationToMultiple(tokens, "Profile Update", notificationMessage, _data);
     return record;
 };
 

@@ -6,6 +6,8 @@ import * as userService from "./user.service.js";
 import APIFeatures from "../core/apiFeature.js";
 import { uploadArrayImage, uploadOnCloudinary } from "../core/cloudImage.js";
 import * as accountService from "./account.service.js";
+import { sendPushNotificationToMultiple } from "../utils/firebase/sendPushNotification.js";
+import { getUserFcmTokens } from "./auth.service.js";
 
 export const createRecord = async (object) => {
     const record = await promotionModel.create(object);
@@ -393,6 +395,20 @@ export const updatePromotionUserStatus = async (promotionId, body) => {
     if (result.modifiedCount === 0) {
         throw new AppError(500, "Failed to update user application status.");
     }
+    // ✅ Send Push Notification
+    const user = await accountModel.findOne({ _id: body.accountId })
+    const tokens = await getUserFcmTokens(user.userId);
+    const title = "Promotion Update";
+    const message =
+        body.status === "approved"
+            ? `🎉 Your application for promotion "${promotion.brandName}" has been approved!`
+            : `❌ Your application for promotion "${promotion.brandName}" has been rejected.`;
+    const _data = {
+        type: "promotion_status",
+        userId: user.userId,
+        image: promotion.brandLogo
+    }
+    await sendPushNotificationToMultiple(tokens, title, message, _data);
 
     logger.info("END: Update Promotion User Status");
     return `User ${body.accountId} has been ${body.status} for promotion ${promotionId}`;

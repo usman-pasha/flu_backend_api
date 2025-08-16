@@ -1,4 +1,6 @@
 import * as userService from "./user.service.js";
+import { firebaseModel } from "../models/firebase.model.js";
+import { notificationModel } from "../models/notification.model.js";
 import {
     hashPassword,
     compareHashPassword,
@@ -524,4 +526,70 @@ export const logout = async (header) => {
         { status: 1 }
     );
     return `${userId} is logging out`
+};
+
+export const storeFcmToken = async (body) => {
+    logger.info(`Starting Storing Fcm Token`);
+
+    if (!body.userId || !body.fcmToken) {
+        throw new AppError(400, "UserId and fcmToken are required.");
+    }
+    const allowedDeviceTypes = ["android", "ios", "web", "unknown"];
+    const deviceType = allowedDeviceTypes.includes(body.deviceType) ? body.deviceType : "unknown";
+    const user = await userService.findOneRecord({ _id: body.userId }, "-password");
+    if (!user) throw new AppError(404, "UserId Not Found");
+    let tokenDoc = await firebaseModel.findOne({
+        userId: user._id, fcmToken: body.fcmToken
+    });
+
+    if (!tokenDoc) {
+        tokenDoc = await firebaseModel.create({
+            userId: user._id,
+            fcmToken: body.fcmToken,
+            deviceType,
+            updatedAt: new Date()
+        });
+    } else {
+        let updated = false;
+        if (tokenDoc.deviceType !== deviceType) {
+            tokenDoc.deviceType = deviceType;
+            updated = true;
+        }
+        tokenDoc.updatedAt = new Date();
+        if (updated) await tokenDoc.save();
+    }
+    return tokenDoc;
+};
+
+export const getUserFcmTokens = async (userId) => {
+    const tokens = await firebaseModel.find({ userId });
+    return tokens.map(t => t.fcmToken);
+};
+
+// get My Notifications for user
+export const getMyNotifications = async (loggedIn) => {
+    if (!loggedIn?._id) throw new AppError(401, "Unauthorized Access");
+
+    // condition to fetch notifications for this user
+    const condition = {
+        userId: loggedIn._id
+    };
+
+    // populate queries (adjust according to your schema)
+    const populateQuery = [
+        {
+            path: "userId",
+            select: ["_id", "username", "email"]
+        }
+    ];
+
+    // fetch notifications
+    const notifications = await notificationModel.find(condition)
+        .populate(populateQuery)
+        .sort({ createdAt: -1 })
+        .select("-responses -tokens -successCount -failureCount");
+
+    if (!notifications || notifications.length === 0)
+        throw new AppError(404, "No Notifications Found");
+    return notifications;
 };

@@ -48,7 +48,6 @@ class accountController {
         const reqData = req.body;
         reqData.userId = req.userId;
         const data = await accountService.republishAccount(reqParams.accountId, reqData);
-        logger.info(data);
         return responser.send(200, `Successfully Account Status Updated`, req, res, data);
     };
 

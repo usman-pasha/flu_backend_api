@@ -4,6 +4,9 @@ import * as logger from "../utils/log.js";
 import AppError from "../core/appError.js"
 import APIFeatures from "../core/apiFeature.js";
 import * as accountService from "./account.service.js";
+import { sendPushNotificationToMultiple } from "../utils/firebase/sendPushNotification.js";
+import { getUserFcmTokens } from "./auth.service.js";
+import { accountModel } from "../models/account.model.js";
 
 export const createrecord = async (object) => {
     const record = await walletModel.create(object);
@@ -43,7 +46,7 @@ export const getMyWallet = async (loggedIn) => {
     const condition = {
         accountId: account?._id
     }
-        const populateQuery = [
+    const populateQuery = [
         {
             path: "promotionIds",
             select: ["_id", "compensation", "location", "brandLogo", "brandNiche", "brandName"],
@@ -128,6 +131,18 @@ export const updatedWalletBalance = async (body) => {
         { new: true }
     );
 
+    // 4️⃣ Send Push Notification
+    const user = await accountModel.findOne({ _id: accountId })
+    const tokens = await getUserFcmTokens(user.userId);
+
+    const title = "Wallet Credited";
+    const message = `₹${amount} has been credited to your wallet for promotion "${promotion.brandName}".`;
+    const _data = {
+        type: "wallet_credit",
+        userId: user.userId,
+        image: promotion.brandLogo
+    }
+    await sendPushNotificationToMultiple(tokens, title, message, _data);
     return {
         message: `Wallet updated successfully with ₹${amount}.`,
         wallet: updatedWallet

@@ -8,13 +8,18 @@ const notificationSchema = new schema({
         ref: "user",
         required: true
     },
-    title: String,
-    message: String,
-    isRead: {
-        type: Boolean,
-        default: false
+    title: { type: String, required: true },
+    body: { type: String, required: true },
+    tokens: [{ type: String }], // device tokens used
+    successCount: { type: Number, default: 0 },
+    failureCount: { type: Number, default: 0 },
+    responses: { type: Object }, // full firebase response
+    image: { type: String },
+    type: {
+        type: String,
+        enum: ["transaction", "account", "wallet_credit", "promotion_status"],
     },
-    type: String, // e.g., 'withdrawal'
-}, { timestamps: true });
+    createdAt: { type: Date, default: Date.now },
+});
 
 export const notificationModel = mongoose.model("notification", notificationSchema);
