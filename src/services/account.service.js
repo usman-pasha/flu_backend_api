@@ -43,6 +43,7 @@ export const createAccount = async (body, loggedInUser) => {
         "city",
         "state",
         "areaOfWork",
+        "profilePicture"
     ];
 
     for (const field of requiredFields) {
@@ -53,6 +54,10 @@ export const createAccount = async (body, loggedInUser) => {
     const accountExists = await findOneRecord({ userId: loggedInUser?._id });
     if (accountExists) {
         throw new AppError(409, "Already Account Exists.You Can't Create Account")
+    }
+    if (body.profilePicture) {
+        const singlePicture = await uploadOnCloudinary(body.profilePicture, "Profile");
+        body.profilePicture = singlePicture?.secure_url;
     }
 
     // Prepare payload
@@ -70,6 +75,7 @@ export const createAccount = async (body, loggedInUser) => {
         facebookUrl: body.facebookUrl,
         instaUrl: body.instaUrl,
         youtubeUrl: body.youtubeUrl,
+        profilePicture: body.profilePicture,
         facebookSubscriberCount: body.facebookSubscriberCount,
         instaFollowerCount: body.instaFollowerCount,
         youtubeSubscriberCount: body.youtubeSubscriberCount,
@@ -86,10 +92,10 @@ export const createAccount = async (body, loggedInUser) => {
     if (body.instaFollowerCount) payloadData.instaFollowerCount = body.instaFollowerCount;
     if (body.youtubeSubscriberCount) payloadData.youtubeSubscriberCount = body.youtubeSubscriberCount;
 
-    if (body.profilePicture) {
-        const singlePicture = await uploadOnCloudinary(body.profilePicture, "Profile")
-        payloadData.profilePicture = singlePicture?.secure_url
-    }
+    // if (body.profilePicture) {
+    //     const singlePicture = await uploadOnCloudinary(body.profilePicture, "Profile")
+    //     payloadData.profilePicture = singlePicture?.secure_url
+    // }
     const record = await createrecord(payloadData);
     const populateQuery = [
         { path: "userId", select: ["_id", "username", "accountType", "email", "phoneNumber"] },
