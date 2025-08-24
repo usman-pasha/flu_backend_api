@@ -283,9 +283,9 @@ export const login = async (body) => {
     }
 
     // Check if the phone number is verified
-    if (user.emailIsVerified !== true) {
-        throw new AppError(400, "Email is not verified. Please verify your email first.");
-    }
+    // if (user.emailIsVerified !== true) {
+    //     throw new AppError(400, "Email is not verified. Please verify your email first.");
+    // }
 
     // Compare the provided password with the stored password
     const isPasswordValid = compareHashPassword(body.password, user.password);
